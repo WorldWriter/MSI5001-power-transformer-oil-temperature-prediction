@@ -1,121 +1,266 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+"""Preprocessing pipeline with time-aware splits and configurable windows."""
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from dataclasses import asdict
+from pathlib import Path
+from typing import Iterable, List, Sequence, Tuple
+
 import joblib
-import warnings
-warnings.filterwarnings('ignore')
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
-def load_and_preprocess_data(sample_size=50000):
-    """加载和预处理数据（使用采样）"""
-    # 加载数据
-    trans1 = pd.read_csv('trans_1.csv')
-    trans2 = pd.read_csv('trans_2.csv')
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
-    # 转换日期列
-    trans1['date'] = pd.to_datetime(trans1['date'])
-    trans2['date'] = pd.to_datetime(trans2['date'])
+from scripts.config import (  # noqa: E402  pylint: disable=wrong-import-position
+    DEFAULT_DATA_DIR,
+    DEFAULT_OUTPUT_DIR,
+    EXPERIMENT_CONFIGS,
+    ExperimentConfig,
+)
 
-    # 合并数据
-    combined_data = pd.concat([trans1, trans2], ignore_index=True)
-    combined_data = combined_data.sort_values('date').reset_index(drop=True)
+LOGGER = logging.getLogger(__name__)
 
-    # 如果数据太大，进行采样
-    if len(combined_data) > sample_size:
-        combined_data = combined_data.iloc[:sample_size]
 
-    print(f"数据形状: {combined_data.shape}")
-    print(f"时间范围: {combined_data['date'].min()} 到 {combined_data['date'].max()}")
+def load_raw_data(data_dir: Path, file_names: Iterable[str] | None = None) -> pd.DataFrame:
+    """Load and concatenate raw CSV files sorted by timestamp."""
+    if file_names is None:
+        file_names = sorted(str(path.name) for path in data_dir.glob("trans_*.csv"))
+    frames: List[pd.DataFrame] = []
+    for name in file_names:
+        csv_path = data_dir / name
+        if not csv_path.exists():
+            LOGGER.warning("Skip missing file: %s", csv_path)
+            continue
+        LOGGER.info("Loading %s", csv_path)
+        frame = pd.read_csv(csv_path)
+        if "date" not in frame.columns:
+            raise ValueError(f"Expected 'date' column in {csv_path}")
+        frame["date"] = pd.to_datetime(frame["date"])
+        frames.append(frame)
+    if not frames:
+        raise FileNotFoundError(
+            f"No CSV files found in {data_dir}. Provide files via --data-dir or --files."
+        )
+    combined = pd.concat(frames, ignore_index=True)
+    combined = combined.sort_values("date").reset_index(drop=True)
+    LOGGER.info(
+        "Loaded %d rows covering %s to %s",
+        len(combined),
+        combined["date"].min(),
+        combined["date"].max(),
+    )
+    return combined
 
-    # 特征列
-    feature_cols = ['HUFL', 'HULL', 'MUFL', 'MULL', 'LUFL', 'LULL']
-    target_col = 'OT'
 
-    return combined_data, feature_cols, target_col
+def create_sequences(
+    data: pd.DataFrame,
+    feature_cols: Sequence[str],
+    target_col: str,
+    config: ExperimentConfig,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Construct sliding-window sequences respecting the experiment configuration."""
+    max_index = len(data) - config.lookback - config.forecast_horizon
+    if max_index <= 0:
+        raise ValueError("Not enough rows to create sequences with the given configuration.")
 
-def create_sequences(data, feature_cols, target_col, lookback, forecast_horizon, max_samples=10000):
-    """创建时间序列序列（限制样本数量）"""
-    X, y = [], []
+    step = max(config.step, 1)
+    candidate_indices = list(range(0, max_index + 1, step))
+    if config.max_sequences is not None and len(candidate_indices) > config.max_sequences:
+        if config.sample_strategy == "random":
+            rng = np.random.default_rng(42)
+            selected = np.sort(rng.choice(candidate_indices, config.max_sequences, replace=False))
+        elif config.sample_strategy == "stride":
+            stride = len(candidate_indices) / config.max_sequences
+            selected = [candidate_indices[int(i * stride)] for i in range(config.max_sequences)]
+        else:
+            selected = candidate_indices[: config.max_sequences]
+        candidate_indices = list(selected)
 
-    # 限制处理的数据量
-    max_start_idx = min(len(data) - lookback - forecast_horizon, max_samples)
+    feature_array = data.loc[:, feature_cols].to_numpy(dtype=float)
+    target_array = data.loc[:, target_col].to_numpy(dtype=float)
 
-    for i in range(lookback, lookback + max_start_idx):
-        # 使用过去lookback个时间点的特征
-        X.append(data[feature_cols].iloc[i-lookback:i].values.flatten())  # 展平为2D数组
-        # 预测forecast_horizon个时间点后的油温
-        y.append(data[target_col].iloc[i + forecast_horizon])
+    sequences = np.stack(
+        [feature_array[start : start + config.lookback] for start in candidate_indices]
+    )
+    targets = np.array(
+        [target_array[start + config.lookback + config.forecast_horizon - 1] for start in candidate_indices]
+    )
+    LOGGER.info("Created %d sequences with shape %s", sequences.shape[0], sequences.shape[1:])
+    return sequences, targets
 
-    return np.array(X), np.array(y)
 
-def prepare_datasets(config_type='1h'):
-    """为三种配置准备数据集"""
-    # 加载数据
-    data, feature_cols, target_col = load_and_preprocess_data()
+def split_sequences(
+    X: np.ndarray,
+    y: np.ndarray,
+    config: ExperimentConfig,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Split sequences into chronological train/validation/test sets."""
+    total_samples = len(X)
+    train_count = int(total_samples * config.train_ratio)
+    val_count = int(total_samples * config.val_ratio)
+    test_count = total_samples - train_count - val_count
+    if min(train_count, val_count, test_count) <= 0:
+        raise ValueError(
+            "Split produced an empty subset. Adjust ratios or increase available sequences."
+        )
+    train_end = train_count
+    val_end = train_end + val_count
+    X_train, y_train = X[:train_end], y[:train_end]
+    X_val, y_val = X[train_end:val_end], y[train_end:val_end]
+    X_test, y_test = X[val_end:], y[val_end:]
+    LOGGER.info(
+        "Split into %d train / %d val / %d test samples",
+        len(X_train),
+        len(X_val),
+        len(X_test),
+    )
+    if len(X_train) == 0 or len(X_val) == 0 or len(X_test) == 0:
+        raise ValueError("Split produced empty dataset; adjust ratios or window parameters.")
+    return X_train, X_val, X_test, y_train, y_val, y_test
 
-    # 根据配置类型设置参数
-    if config_type == '1h':
-        lookback = 16  # 使用过去16个时间点（4小时）
-        forecast_horizon = 4  # 预测4个时间点（1小时）后
-    elif config_type == '1d':
-        lookback = 32  # 使用过去32个时间点（8小时）
-        forecast_horizon = 96  # 预测96个时间点（1天）后
-    elif config_type == '1w':
-        lookback = 64  # 使用过去64个时间点（16小时）
-        forecast_horizon = 672  # 预测672个时间点（1周）后
-    else:
-        raise ValueError("config_type 必须是 '1h', '1d' 或 '1w'")
 
-    print(f"\n配置: {config_type}")
-    print(f"回溯时间点数: {lookback}")
-    print(f"预测时间点数: {forecast_horizon}")
-
-    # 标准化特征
+def scale_datasets(
+    X_train: np.ndarray,
+    X_val: np.ndarray,
+    X_test: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, StandardScaler]:
+    """Fit a StandardScaler on training data and transform all splits."""
     scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(data[feature_cols])
+    n_features = X_train.shape[-1]
+    scaler.fit(X_train.reshape(-1, n_features))
+    X_train_scaled = scaler.transform(X_train.reshape(-1, n_features)).reshape(X_train.shape)
+    X_val_scaled = scaler.transform(X_val.reshape(-1, n_features)).reshape(X_val.shape)
+    X_test_scaled = scaler.transform(X_test.reshape(-1, n_features)).reshape(X_test.shape)
+    return X_train_scaled, X_val_scaled, X_test_scaled, scaler
 
-    # 创建标准化后的数据框
-    scaled_data = pd.DataFrame(scaled_features, columns=feature_cols)
-    scaled_data[target_col] = data[target_col].values
 
-    # 创建序列（限制样本数量）
-    X, y = create_sequences(scaled_data, feature_cols, target_col, lookback, forecast_horizon)
+def save_numpy_arrays(
+    output_dir: Path,
+    config: ExperimentConfig,
+    X_train: np.ndarray,
+    X_val: np.ndarray,
+    X_test: np.ndarray,
+    y_train: np.ndarray,
+    y_val: np.ndarray,
+    y_test: np.ndarray,
+    scaler: StandardScaler,
+    metadata: dict,
+) -> None:
+    """Persist datasets, scaler, and metadata."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    np.save(output_dir / f"X_train_{config.name}.npy", X_train)
+    np.save(output_dir / f"X_val_{config.name}.npy", X_val)
+    np.save(output_dir / f"X_test_{config.name}.npy", X_test)
+    np.save(output_dir / f"y_train_{config.name}.npy", y_train)
+    np.save(output_dir / f"y_val_{config.name}.npy", y_val)
+    np.save(output_dir / f"y_test_{config.name}.npy", y_test)
+    joblib.dump(scaler, output_dir / f"scaler_{config.name}.pkl")
+    with (output_dir / f"metadata_{config.name}.json").open("w", encoding="utf-8") as handle:
+        json.dump(metadata, handle, indent=2, ensure_ascii=False)
+    LOGGER.info("Artifacts written to %s", output_dir)
 
-    print(f"\n序列形状:")
-    print(f"X shape: {X.shape}")
-    print(f"y shape: {y.shape}")
 
-    # 简单的训练测试分割（80%-20%）
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=True)
+def preprocess_configuration(
+    config: ExperimentConfig,
+    data: pd.DataFrame,
+    output_dir: Path,
+    feature_columns: Sequence[str],
+    target_column: str,
+) -> None:
+    """Run preprocessing for a single experiment configuration."""
+    LOGGER.info("Preparing configuration %s", config.name)
+    sequences, targets = create_sequences(data, feature_columns, target_column, config)
+    X_train, X_val, X_test, y_train, y_val, y_test = split_sequences(sequences, targets, config)
+    X_train_scaled, X_val_scaled, X_test_scaled, scaler = scale_datasets(X_train, X_val, X_test)
+    metadata = {
+        "config": asdict(config),
+        "n_train": len(X_train_scaled),
+        "n_val": len(X_val_scaled),
+        "n_test": len(X_test_scaled),
+        "features": list(feature_columns),
+        "target": target_column,
+    }
+    save_numpy_arrays(
+        output_dir,
+        config,
+        X_train_scaled,
+        X_val_scaled,
+        X_test_scaled,
+        y_train,
+        y_val,
+        y_test,
+        scaler,
+        metadata,
+    )
 
-    print(f"\n数据分割:")
-    print(f"训练集大小: {X_train.shape[0]}")
-    print(f"测试集大小: {X_test.shape[0]}")
 
-    return X_train, X_test, y_train, y_test, scaler
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--configs",
+        nargs="*",
+        default=list(EXPERIMENT_CONFIGS.keys()),
+        help="Experiment configurations to generate (default: all).",
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=DEFAULT_DATA_DIR,
+        help="Directory containing the raw CSV files.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory for the generated numpy arrays and metadata.",
+    )
+    parser.add_argument(
+        "--files",
+        nargs="*",
+        help="Optional explicit list of CSV file names to load from the data directory.",
+    )
+    parser.add_argument(
+        "--feature-cols",
+        nargs="*",
+        default=["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL"],
+        help="Feature columns to use from the raw CSV files.",
+    )
+    parser.add_argument(
+        "--target-col",
+        default="OT",
+        help="Target column representing the oil temperature.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        help="Logging level (DEBUG, INFO, WARNING, ...).",
+    )
+    return parser.parse_args()
 
-# 主函数
-def main():
-    # 测试三种配置
-    configs = ['1h', '1d', '1w']
 
-    for config in configs:
-        print(f"\n{'='*50}")
-        print(f"准备 {config} 配置的数据")
-        print('='*50)
+def main() -> None:
+    args = parse_args()
+    logging.basicConfig(level=args.log_level.upper(), format="%(asctime)s - %(levelname)s - %(message)s")
+    LOGGER.info("Starting preprocessing with configs: %s", args.configs)
+    raw_data = load_raw_data(args.data_dir, args.files)
+    for name in args.configs:
+        if name not in EXPERIMENT_CONFIGS:
+            raise KeyError(f"Unknown configuration '{name}'. Available: {sorted(EXPERIMENT_CONFIGS)}")
+        preprocess_configuration(
+            EXPERIMENT_CONFIGS[name],
+            raw_data,
+            args.output_dir,
+            args.feature_cols,
+            args.target_col,
+        )
 
-        X_train, X_test, y_train, y_test, scaler = prepare_datasets(config)
-
-        # 保存数据
-        np.save(f'X_train_{config}.npy', X_train)
-        np.save(f'X_test_{config}.npy', X_test)
-        np.save(f'y_train_{config}.npy', y_train)
-        np.save(f'y_test_{config}.npy', y_test)
-
-        # 保存标准化器
-        joblib.dump(scaler, f'scaler_{config}.pkl')
-
-        print(f"数据已保存")
 
 if __name__ == "__main__":
     main()

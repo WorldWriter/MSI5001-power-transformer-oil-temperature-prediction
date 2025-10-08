@@ -1,19 +1,40 @@
+from __future__ import annotations
+
+import warnings
+from pathlib import Path
+
+import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, r2_score
-import joblib
-import warnings
+
 warnings.filterwarnings('ignore')
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
-def load_final_results():
+ARTIFACTS = Path('artifacts')
+MODELS = ARTIFACTS / 'models'
+
+
+def load_final_results(path: Path | None = None) -> pd.DataFrame:
     """加载最终结果"""
-    return pd.read_csv('final_model_comparison.csv')
+    path = path or (ARTIFACTS / 'final_model_comparison.csv')
+    return pd.read_csv(path)
+
+
+def load_array(name: str) -> np.ndarray:
+    array = np.load(ARTIFACTS / name)
+    if array.ndim == 3:
+        array = array.reshape(array.shape[0], -1)
+    return array
+
+
+def load_model(name: str):
+    return joblib.load(MODELS / name)
 
 def plot_model_performance(results_df):
     """绘制模型性能对比图"""
@@ -42,12 +63,22 @@ def plot_model_performance(results_df):
     x = np.arange(len(configs))
     width = 0.15
 
-    models = ['Random Forest', 'MLP Small', 'Ridge Regression', 'Linear Regression']
+    models = [
+        'RandomForestRegressor',
+        'MLPRegressor',
+        'Ridge',
+        'LinearRegression',
+    ]
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
     for i, model in enumerate(models):
         model_data = results_df[results_df['Model'] == model]
-        r2_scores = [model_data[model_data['Config'] == config]['R2'].values[0] if len(model_data[model_data['Config'] == config]) > 0 else 0 for config in configs]
+        r2_scores = [
+            model_data[model_data['Config'] == config]['R2'].values[0]
+            if len(model_data[model_data['Config'] == config]) > 0
+            else 0
+            for config in configs
+        ]
         ax3.bar(x + i * width, r2_scores, width, label=model, color=colors[i])
 
     ax3.set_xlabel('配置类型')
@@ -63,12 +94,10 @@ def plot_model_performance(results_df):
 
     # 定义模型复杂度（主观评分）
     complexity_map = {
-        'Linear Regression': 1,
-        'Ridge Regression': 2,
-        'Random Forest': 4,
-        'MLP Small': 3,
-        'MLP Medium': 5,
-        'MLP Large': 6
+        'LinearRegression': 1,
+        'Ridge': 2,
+        'RandomForestRegressor': 4,
+        'MLPRegressor': 5,
     }
 
     for config in configs:
@@ -92,14 +121,14 @@ def plot_prediction_examples():
     from sklearn.ensemble import RandomForestRegressor
 
     # 加载数据
-    X_test_1h = np.load('X_test_1h.npy')
-    y_test_1h = np.load('y_test_1h.npy')
-    X_test_1d = np.load('X_test_1d.npy')
-    y_test_1d = np.load('y_test_1d.npy')
+    X_test_1h = load_array('X_test_1h.npy')
+    y_test_1h = np.load(ARTIFACTS / 'y_test_1h.npy')
+    X_test_1d = load_array('X_test_1d.npy')
+    y_test_1d = np.load(ARTIFACTS / 'y_test_1d.npy')
 
     # 加载模型
-    rf_1h = joblib.load('rf_1h.pkl')
-    rf_1d = joblib.load('rf_1d.pkl')
+    rf_1h = load_model('random_forest_1h.pkl')
+    rf_1d = load_model('random_forest_1d.pkl')
 
     # 预测
     y_pred_1h = rf_1h.predict(X_test_1h)
@@ -150,9 +179,9 @@ def plot_error_distribution():
     from sklearn.ensemble import RandomForestRegressor
 
     # 加载数据和模型
-    X_test_1h = np.load('X_test_1h.npy')
-    y_test_1h = np.load('y_test_1h.npy')
-    rf_1h = joblib.load('rf_1h.pkl')
+    X_test_1h = load_array('X_test_1h.npy')
+    y_test_1h = np.load(ARTIFACTS / 'y_test_1h.npy')
+    rf_1h = load_model('random_forest_1h.pkl')
     y_pred_1h = rf_1h.predict(X_test_1h)
 
     # 计算误差
@@ -203,12 +232,12 @@ def generate_summary_table():
         best_model = config_data.loc[config_data['R2'].idxmax()]
 
         # 传统ML最佳
-        ml_models = ['Linear Regression', 'Ridge Regression', 'Random Forest']
+        ml_models = ['LinearRegression', 'Ridge', 'RandomForestRegressor']
         ml_data = config_data[config_data['Model'].isin(ml_models)]
         best_ml = ml_data.loc[ml_data['R2'].idxmax()]
 
         # 深度学习最佳
-        dl_models = ['MLP Small', 'MLP Medium', 'MLP Large']
+        dl_models = ['MLPRegressor']
         dl_data = config_data[config_data['Model'].isin(dl_models)]
         if len(dl_data) > 0:
             best_dl = dl_data.loc[dl_data['R2'].idxmax()]
