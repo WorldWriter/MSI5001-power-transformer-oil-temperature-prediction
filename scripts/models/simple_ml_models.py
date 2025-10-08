@@ -1,22 +1,75 @@
+from typing import Dict, List, Tuple
+
+import joblib
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression, Ridge
+from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import joblib
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
 import warnings
+
 warnings.filterwarnings('ignore')
 
-def load_data(config_type='1h'):
-    """加载预处理的数据"""
+
+def load_data(config_type: str = '1h') -> Tuple[
+    NDArray[np.float_],
+    NDArray[np.float_],
+    NDArray[np.float_],
+    NDArray[np.float_],
+]:
+    """从磁盘加载指定配置的序列化数据集。
+
+    参数
+    ----
+    config_type:
+        预处理阶段保存的预测窗口标签（例如 ``"1h"``）。
+
+    返回
+    ----
+    X_train, X_test, y_train, y_test:
+        通过 ``numpy.load`` 读取的特征和目标数组。
+
+    副作用
+    ------
+    依赖已存在的 ``.npy`` 文件；若文件缺失会触发 ``IOError``。
+    """
     X_train = np.load(f'X_train_{config_type}.npy')
     X_test = np.load(f'X_test_{config_type}.npy')
     y_train = np.load(f'y_train_{config_type}.npy')
     y_test = np.load(f'y_test_{config_type}.npy')
     return X_train, X_test, y_train, y_test
 
-def evaluate_model(y_true, y_pred, model_name, config_type):
-    """评估模型性能"""
+
+def evaluate_model(
+    y_true: NDArray[np.float_],
+    y_pred: NDArray[np.float_],
+    model_name: str,
+    config_type: str,
+) -> Dict[str, float | str]:
+    """计算回归指标并返回结果字典。
+
+    参数
+    ----
+    y_true:
+        测试集真实值。
+    y_pred:
+        模型推理得到的预测值。
+    model_name:
+        当前评估的模型名称。
+    config_type:
+        数据集的时间窗口标识。
+
+    返回
+    ----
+    results:
+        包含 MSE、RMSE、MAE、R² 等指标的字典，便于进一步汇总分析。
+
+    副作用
+    ------
+    将模型名称及关键指标打印到标准输出，便于在命令行中观察训练表现。
+    """
     mse = mean_squared_error(y_true, y_pred)
     rmse = np.sqrt(mse)
     mae = mean_absolute_error(y_true, y_pred)
@@ -34,8 +87,24 @@ def evaluate_model(y_true, y_pred, model_name, config_type):
     print(f"{model_name} ({config_type}): RMSE={rmse:.4f}, R²={r2:.4f}")
     return results
 
-def train_models(config_type='1h'):
-    """训练简化版模型"""
+
+def train_models(config_type: str = '1h') -> List[Dict[str, float | str]]:
+    """训练传统机器学习模型并返回评估结果。
+
+    参数
+    ----
+    config_type:
+        指定要加载的数据配置标签。
+
+    返回
+    ----
+    results:
+        每个模型评估指标的列表，用于写入 CSV 或后续分析。
+
+    副作用
+    ------
+    训练期间会在本地保存 ``joblib`` 模型文件，并输出训练进度。
+    """
     print(f"\n训练 {config_type} 配置的模型")
 
     # 加载数据
@@ -79,8 +148,9 @@ def train_models(config_type='1h'):
 
     return results
 
-def main():
-    """主函数"""
+
+def main() -> None:
+    """脚本入口：遍历所有配置并将结果写入 ``simple_ml_results.csv``。"""
     configs = ['1h', '1d', '1w']
     all_results = []
 

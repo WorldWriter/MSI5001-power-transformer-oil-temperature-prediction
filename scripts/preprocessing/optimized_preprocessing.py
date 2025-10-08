@@ -1,13 +1,38 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from typing import List, Sequence, Tuple
+
 import joblib
+import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
 import warnings
+
 warnings.filterwarnings('ignore')
 
-def load_and_preprocess_data(sample_size=50000):
-    """加载和预处理数据（使用采样）"""
+
+def load_and_preprocess_data(sample_size: int = 50000) -> Tuple[pd.DataFrame, List[str], str]:
+    """加载并清洗原始变压器数据集。
+
+    参数
+    ----
+    sample_size:
+        限制合并后数据集的行数，以避免在本地实验中占用过多内存。
+
+    返回
+    ----
+    data:
+        经过时间排序的数据框，包含原始特征和目标列。
+    feature_cols:
+        用于建模的特征列名称列表。
+    target_col:
+        目标列名称 ``"OT"``。
+
+    副作用
+    ------
+    将数据规模和时间范围打印到标准输出，方便人工检查数据加载是否成功。
+    """
     # 加载数据
     trans1 = pd.read_csv('trans_1.csv')
     trans2 = pd.read_csv('trans_2.csv')
@@ -33,8 +58,43 @@ def load_and_preprocess_data(sample_size=50000):
 
     return combined_data, feature_cols, target_col
 
-def create_sequences(data, feature_cols, target_col, lookback, forecast_horizon, max_samples=10000):
-    """创建时间序列序列（限制样本数量）"""
+
+def create_sequences(
+    data: pd.DataFrame,
+    feature_cols: Sequence[str],
+    target_col: str,
+    lookback: int,
+    forecast_horizon: int,
+    max_samples: int = 10000,
+) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
+    """将连续时间点转换为监督学习样本。
+
+    参数
+    ----
+    data:
+        已完成标准化的时间序列数据，必须包含 ``feature_cols`` 和 ``target_col``。
+    feature_cols:
+        需要回溯的特征列集合。
+    target_col:
+        预测目标列名称。
+    lookback:
+        输入序列包含的历史时间步数。
+    forecast_horizon:
+        目标需要提前预测的时间步数。
+    max_samples:
+        限制生成的序列数量，以便在资源受限的环境中运行。
+
+    返回
+    ----
+    X:
+        形状为 ``(n_samples, lookback * len(feature_cols))`` 的二维特征数组。
+    y:
+        形状为 ``(n_samples,)`` 的目标数组。
+
+    副作用
+    ------
+    无副作用，仅在内存中构造数组。
+    """
     X, y = [], []
 
     # 限制处理的数据量
@@ -48,8 +108,32 @@ def create_sequences(data, feature_cols, target_col, lookback, forecast_horizon,
 
     return np.array(X), np.array(y)
 
-def prepare_datasets(config_type='1h'):
-    """为三种配置准备数据集"""
+
+def prepare_datasets(config_type: str = '1h') -> Tuple[
+    NDArray[np.float_],
+    NDArray[np.float_],
+    NDArray[np.float_],
+    NDArray[np.float_],
+    StandardScaler,
+]:
+    """根据预测窗口配置生成模型训练/验证数据。
+
+    参数
+    ----
+    config_type:
+        预测粒度，可选 ``"1h"``、``"1d"`` 或 ``"1w"``，分别表示 1 小时、1 天、1 周的预测任务。
+
+    返回
+    ----
+    X_train, X_test, y_train, y_test:
+        分割后的特征与标签数组。
+    scaler:
+        已拟合的 ``StandardScaler``，用于在推理阶段还原或复用标准化参数。
+
+    副作用
+    ------
+    将当前配置的参数、序列形状及数据划分信息打印到标准输出，辅助调试。
+    """
     # 加载数据
     data, feature_cols, target_col = load_and_preprocess_data()
 
@@ -94,8 +178,15 @@ def prepare_datasets(config_type='1h'):
 
     return X_train, X_test, y_train, y_test, scaler
 
+
 # 主函数
-def main():
+def main() -> None:
+    """脚本入口：依次处理不同预测配置并持久化结果文件。
+
+    副作用
+    ------
+    读取磁盘上的原始 ``trans_*.csv`` 文件，写入 ``.npy`` 和 ``.pkl`` 中间件，以供后续模型训练使用。
+    """
     # 测试三种配置
     configs = ['1h', '1d', '1w']
 

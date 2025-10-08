@@ -49,6 +49,13 @@ python simple_deep_models.py
 python visualization_analysis.py
 ```
 
+### 5. 运行静态类型检查
+```bash
+mypy --ignore-missing-imports scripts/preprocessing/optimized_preprocessing.py \
+    scripts/models/simple_ml_models.py scripts/models/simple_deep_models.py
+```
+> 使用 ``--ignore-missing-imports`` 可以在未安装第三方库类型存根的环境下完成基本一致性检查。
+
 ## 主要结果
 
 ### 最佳模型性能
