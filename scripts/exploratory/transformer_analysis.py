@@ -88,6 +88,42 @@ def visualize_oil_temperature(df, name):
     plt.savefig(f'{name}_oil_temperature.png', dpi=300, bbox_inches='tight')
     plt.show()
 
+def feature_histograms(df, name):
+    """绘制六个负载特征的分布直方图，帮助直观理解取值范围与偏态"""
+    features = ['HUFL', 'HULL', 'MUFL', 'MULL', 'LUFL', 'LULL']
+    fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+    fig.suptitle(f'{name} 特征分布直方图', fontsize=16)
+
+    for i, feature in enumerate(features):
+        r, c = divmod(i, 2)
+        axes[r, c].hist(df[feature].dropna(), bins=50, alpha=0.8, color='#4c78a8', edgecolor='black')
+        axes[r, c].set_title(feature)
+        axes[r, c].set_xlabel('数值')
+        axes[r, c].set_ylabel('频次')
+        axes[r, c].grid(True, alpha=0.2)
+
+    plt.tight_layout()
+    plt.savefig(f'{name}_feature_histograms.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
+def hourly_profile_ot(df, name):
+    """绘制按小时聚合的油温平均值曲线，直观看到日内周期模式"""
+    if not np.issubdtype(df['date'].dtype, np.datetime64):
+        df['date'] = pd.to_datetime(df['date'])
+    df['hour'] = df['date'].dt.hour
+    hourly_mean = df.groupby('hour')['OT'].mean()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(hourly_mean.index, hourly_mean.values, marker='o', color='#e45756')
+    plt.title(f'{name} 按小时的油温平均值')
+    plt.xlabel('小时 (0-23)')
+    plt.ylabel('油温平均值 (°C)')
+    plt.grid(True, alpha=0.3)
+    plt.xticks(range(0, 24))
+    plt.tight_layout()
+    plt.savefig(f'{name}_hourly_profile_ot.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
 # 相关性分析
 def correlation_analysis(df, name):
     """分析特征之间的相关性"""
@@ -120,6 +156,14 @@ def main():
     # 油温可视化
     visualize_oil_temperature(trans1, 'Transformer 1')
     visualize_oil_temperature(trans2, 'Transformer 2')
+
+    # 特征分布直方图
+    feature_histograms(trans1, 'Transformer 1')
+    feature_histograms(trans2, 'Transformer 2')
+
+    # 小白友好的日内模式图（小时聚合）
+    hourly_profile_ot(trans1, 'Transformer 1')
+    hourly_profile_ot(trans2, 'Transformer 2')
 
     # 相关性分析
     corr1 = correlation_analysis(trans1, 'Transformer 1')
