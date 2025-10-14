@@ -10,6 +10,12 @@
 - **时间特征增强发现**: 83%的模型配置通过时间特征获得性能提升
 - **最佳模型性能**: 使用时间特征的随机森林模型在1小时预测中达到R²=0.60
 - **关键风险识别**: 发现线性模型在高维时间特征下的重大风险
+- **🆕 时间窗口长度优化**: 系统性研究了12种窗口配置，发现8小时历史窗口最适合1小时预测
+
+### 时间特征增强效果
+- **83%的模型配置**通过时间特征获得性能提升
+- **最大提升幅度**: R²从0.35提升至0.60（71%相对提升）
+- **关键时间特征**: 小时、星期几、月份对预测效果最为重要
 
 ## 📁 项目结构
 
@@ -20,6 +26,21 @@
 │   ├── temporal_factors_impact_report.md # 时间因素影响分析报告
 │   ├── project_report.md           # 基础项目报告
 │   └── beginner_report.md          # 初学者报告
+├── Windows_diff/                   # 🆕 时间窗口长度实验
+│   ├── docs/                       # 实验文档和报告
+│   │   ├── window_length_analysis_report.md    # 详细分析报告
+│   │   ├── comprehensive_experiment_summary.md # 综合实验总结
+│   │   └── experiment_design.md    # 实验设计文档
+│   ├── scripts/                    # 实验脚本
+│   │   ├── window_experiment_preprocessing.py  # 数据预处理
+│   │   ├── window_experiment_models.py         # 模型训练
+│   │   ├── window_experiment_analysis.py       # 结果分析
+│   │   └── run_experiment.py       # 完整实验流程
+│   ├── models/                     # 36个训练好的模型
+│   │   ├── 1h_lookback_*/          # 1小时预测模型
+│   │   ├── 1d_lookback_*/          # 1天预测模型
+│   │   └── 1w_lookback_*/          # 1周预测模型
+│   └── visualizations/             # 性能分析图表
 ├── scripts/                        # 核心脚本
 │   ├── models/                     # 模型训练脚本
 │   │   ├── simple_ml_models.py     # 传统机器学习模型
@@ -57,13 +78,29 @@
 1. **阶段一**: 基线模型开发 - 建立性能基准
 2. **阶段二**: 时间特征工程 - 探索时间因素影响
 3. **阶段三**: 高级分析优化 - 深入模型行为分析
+4. **🆕 阶段四**: 时间窗口长度优化 - 系统性研究历史窗口配置
 
 ### 核心发现
 - **随机森林优势**: 在所有预测时间窗口中表现最佳
 - **时间特征价值**: 显著提升模型预测精度
 - **Ridge回归风险**: 在长期预测中使用高维时间特征存在严重性能退化风险
+- **🆕 最佳窗口配置**: 8小时历史窗口最适合1小时预测，随机森林在所有配置下表现最优
 
 ## 🚀 快速开始
+
+### 运行时间窗口长度实验（最新）
+```bash
+# 进入实验目录
+cd Windows_diff
+
+# 运行完整实验流程
+python scripts/run_experiment.py
+
+# 查看实验结果
+cat docs/comprehensive_experiment_summary.md
+```
+
+### 运行基础预测模型
 
 ### 环境要求
 - Python 3.8+
@@ -94,6 +131,13 @@ python scripts/analysis/seasonal_analysis.py
 ```
 
 ## 📊 主要结果
+
+### 🆕 时间窗口长度优化结果
+| 预测时长 | 最佳历史窗口 | 最佳模型 | R² Score | RMSE |
+|---------|-------------|----------|----------|------|
+| 1小时   | 8小时       | RandomForest | 0.2585 | 4.91 |
+| 24小时  | 32小时      | RandomForest | 0.1842 | 5.16 |
+| 168小时 | 96小时      | RandomForest | 0.1456 | 5.28 |
 
 ### 基线模型性能对比
 
@@ -204,8 +248,17 @@ python scripts/analysis/seasonal_analysis.py
 - **风险表现**: 1周预测中R²从0.013降至-0.339
 - **根本原因**: 维度诅咒和过拟合问题
 
-## 结果文件
+## 📋 生成的结果文件
 
+### 🆕 时间窗口长度实验结果
+- `Windows_diff/docs/window_length_analysis_report.md` - 详细分析报告
+- `Windows_diff/docs/comprehensive_experiment_summary.md` - 综合实验总结
+- `Windows_diff/visualizations/best_r2_heatmap.png` - 最佳R²性能热力图
+- `Windows_diff/visualizations/r2_vs_history_window.png` - R²与历史窗口关系图
+- `Windows_diff/visualizations/rmse_vs_history_window.png` - RMSE与历史窗口关系图
+- `Windows_diff/visualizations/training_time_vs_history_window.png` - 训练时间分析图
+
+### 基础实验结果文件
 运行完成后会生成以下文件：
 - `final_model_comparison.csv`: 所有模型的性能对比
 - `model_performance_analysis.png`: 模型性能可视化
