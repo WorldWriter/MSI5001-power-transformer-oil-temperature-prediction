@@ -11,6 +11,7 @@
 - **最佳模型性能**: 使用时间特征的随机森林模型在1小时预测中达到R²=0.60
 - **关键风险识别**: 发现线性模型在高维时间特征下的重大风险
 - **🆕 时间窗口长度优化**: 系统性研究了12种窗口配置，发现8小时历史窗口最适合1小时预测
+- **🆕 ResNet深度学习模型**: 实现了PyTorch残差网络，支持GPU加速训练
 
 ### 时间特征增强效果
 - **83%的模型配置**通过时间特征获得性能提升
@@ -26,6 +27,9 @@
 │   ├── temporal_factors_impact_report.md # 时间因素影响分析报告
 │   ├── project_report.md           # 基础项目报告
 │   └── beginner_report.md          # 初学者报告
+├── notebooks/                      # 🆕 Jupyter Notebook实现
+│   ├── resnet_oil_temperature_prediction.ipynb  # ResNet模型实现
+│   └── README.md                   # ResNet使用说明
 ├── Windows_diff/                   # 🆕 时间窗口长度实验
 │   ├── docs/                       # 实验文档和报告
 │   │   ├── window_length_analysis_report.md    # 详细分析报告
@@ -57,6 +61,7 @@
 ├── models/                         # 训练好的模型
 │   ├── traditional_ml/             # 传统机器学习模型
 │   ├── deep_learning/              # 深度学习模型
+│   ├── resnet/                     # 🆕 ResNet模型（PyTorch）
 │   └── scalers/                    # 数据标准化器
 ├── tutorial/                       # 教程文档
 │   ├── README.md                   # 教程入口
@@ -88,7 +93,22 @@
 
 ## 🚀 快速开始
 
-### 运行时间窗口长度实验（最新）
+### 运行ResNet深度学习模型（最新）
+```bash
+# 1. 安装PyTorch（Windows CUDA）
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# 2. 安装其他依赖
+pip install -r requirements-resnet.txt
+
+# 3. 启动Jupyter Notebook
+jupyter notebook
+
+# 4. 打开并运行 notebooks/resnet_oil_temperature_prediction.ipynb
+```
+详细说明见 `notebooks/README.md`
+
+### 运行时间窗口长度实验
 ```bash
 # 进入实验目录
 cd Windows_diff
@@ -192,6 +212,11 @@ python scripts/analysis/seasonal_analysis.py
   - 小型：50→25个神经元
   - 中型：100→50→25个神经元
   - 大型：200→100→50→25个神经元
+- **🆕 ResNet (残差神经网络)**: 基于PyTorch的深度学习模型
+  - 2-3个残差块，支持skip connections
+  - Batch Normalization和Dropout正则化
+  - GPU (CUDA)加速训练
+  - 完整Jupyter Notebook实现
 
 ## 📈 评估指标
 
