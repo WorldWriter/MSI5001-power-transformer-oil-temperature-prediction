@@ -98,16 +98,171 @@
 ## 🚀 快速开始
 
 ### 运行RNN-ResNet混合模型（最新推荐）
+
+#### 📋 前置要求
+- **Python**: 3.8或更高版本
+- **数据文件**: `dataset/trans_1.csv`, `dataset/trans_2.csv`
+- **GPU (可选)**: NVIDIA GPU with CUDA 11.8/12.1 (推荐，可大幅加速训练)
+- **内存**: 至少8GB RAM (16GB推荐)
+
+#### 步骤1: 数据准备
+
+确认数据文件在正确位置：
 ```bash
-# 1. 安装PyTorch（Windows CUDA）
+# 检查数据文件
+ls dataset/
+# 应该看到: trans_1.csv  trans_2.csv  README.md
+```
+
+如果没有数据文件，请将CSV文件复制到 `dataset/` 文件夹。
+
+#### 步骤2: 安装依赖
+
+**安装PyTorch (选择您的环境):**
+
+```bash
+# Windows + NVIDIA GPU (CUDA 11.8) - 推荐
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
-# 2. 启动Jupyter Notebook
+# Windows + NVIDIA GPU (CUDA 12.1)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# CPU only (无GPU，训练较慢)
+pip install torch torchvision
+
+# Linux/Mac 请访问 https://pytorch.org 查看安装命令
+```
+
+**安装其他依赖:**
+```bash
+pip install numpy pandas scikit-learn matplotlib seaborn jupyter notebook
+```
+
+**验证安装:**
+```python
+# 在Python中运行
+import torch
+print(f"PyTorch: {torch.__version__}")
+print(f"CUDA可用: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+```
+
+#### 步骤3: 运行Notebook
+
+```bash
+# 1. 启动Jupyter Notebook
 jupyter notebook
 
-# 3. 打开并运行 notebooks/rnn_resnet_oil_temperature_prediction.ipynb
-# 详细说明见 notebooks/rnn_resnet_README.md
+# 2. 在浏览器中打开
+# 导航到: notebooks/rnn_resnet_oil_temperature_prediction.ipynb
+
+# 3. 运行所有cells
+# 方法1: 点击 Cell → Run All
+# 方法2: 依次按 Shift+Enter 运行每个cell
 ```
+
+**训练配置** (在notebook中可调整):
+- 序列长度: 10个时间步 (2.5小时历史数据)
+- RNN隐藏层: 64
+- ResNet隐藏层: 128
+- Batch size: 128
+- 最大epochs: 100
+- Early stopping: 20个epochs无改进时停止
+
+#### 步骤4: 查看结果
+
+训练完成后，以下文件将生成：
+
+**模型文件** (PyTorch):
+```
+models/rnn_resnet/
+├── lstm_resnet_1h.pth    # LSTM-ResNet 1小时预测
+├── lstm_resnet_1d.pth    # LSTM-ResNet 1天预测
+├── lstm_resnet_1w.pth    # LSTM-ResNet 1周预测
+├── gru_resnet_1h.pth     # GRU-ResNet 1小时预测
+├── gru_resnet_1d.pth     # GRU-ResNet 1天预测
+└── gru_resnet_1w.pth     # GRU-ResNet 1周预测
+```
+
+**可视化结果**:
+```
+visualizations/rnn_resnet/
+├── training_history.png          # 训练和验证损失曲线
+├── lstm_vs_gru_comparison.png    # LSTM vs GRU性能对比
+├── all_models_comparison.png     # 所有模型对比
+└── predictions_*.png              # 预测结果可视化
+```
+
+**性能数据**:
+```
+results/
+├── rnn_resnet_comparison.csv     # CSV格式性能对比表
+└── rnn_resnet_final_results.pkl  # 完整结果（Python pickle）
+```
+
+#### ⏱️ 预期训练时间
+
+| 硬件配置 | LSTM-ResNet | GRU-ResNet |
+|---------|-------------|------------|
+| RTX 3060 或更好 | 20-30分钟 | 15-25分钟 |
+| 集成显卡 | 30-45分钟 | 25-35分钟 |
+| CPU only | 45-90分钟 | 30-60分钟 |
+
+*时间包括三个配置(1h, 1d, 1w)的训练
+
+#### 📊 预期性能指标
+
+**1小时预测** (最重要):
+- LSTM-ResNet: R² = 0.62-0.72, RMSE = 4.0-5.0°C
+- GRU-ResNet: R² = 0.60-0.70, RMSE = 4.2-5.2°C
+- 对比基准 Random Forest: R² = 0.60, RMSE = 4.68°C
+
+**1天预测**:
+- LSTM-ResNet: R² = 0.40-0.55
+- GRU-ResNet: R² = 0.38-0.53
+
+**1周预测**:
+- LSTM-ResNet: R² = 0.25-0.40
+- GRU-ResNet: R² = 0.23-0.38
+
+#### ⚠️ 常见问题快速排查
+
+**问题1: CUDA Out of Memory**
+```bash
+# 解决方法: 减小batch size
+# 在notebook中修改: batch_size = 64  # 或 32
+```
+
+**问题2: 数据文件未找到**
+```bash
+# 错误: FileNotFoundError: dataset/trans_1.csv
+# 解决: 确保数据在正确位置
+mkdir -p dataset
+# 复制CSV文件到dataset/文件夹
+```
+
+**问题3: PyTorch未检测到GPU**
+```bash
+# 检查CUDA安装
+nvcc --version
+
+# 重新安装正确版本的PyTorch
+pip uninstall torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
+
+**问题4: 训练太慢**
+```bash
+# 使用GRU代替LSTM (20-30%更快)
+# 或减少epochs数量
+# 或使用GPU
+```
+
+#### 📚 详细文档
+
+完整使用指南、架构说明、高级调优请参考:
+- **notebooks/rnn_resnet_README.md** - 完整文档（Windows CUDA设置、故障排除、性能优化等）
 
 ### 运行时间窗口长度实验
 ```bash
