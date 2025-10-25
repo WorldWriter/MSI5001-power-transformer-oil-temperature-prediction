@@ -56,6 +56,9 @@ venv.bak/
 *.csv
 *.npy
 
+# Exception: Allow dataset folder CSV files (needed for course project)
+!dataset/*.csv
+
 # Results that can be regenerated
 results/
 visualization/plots/*.png
