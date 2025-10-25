@@ -11,6 +11,7 @@
 - **最佳模型性能**: 使用时间特征的随机森林模型在1小时预测中达到R²=0.60
 - **关键风险识别**: 发现线性模型在高维时间特征下的重大风险
 - **🆕 时间窗口长度优化**: 系统性研究了12种窗口配置，发现8小时历史窗口最适合1小时预测
+- **🆕 RNN-ResNet混合模型**: 结合LSTM/GRU与ResNet的混合架构，捕获时序依赖和深度特征
 
 ### 时间特征增强效果
 - **83%的模型配置**通过时间特征获得性能提升
@@ -26,6 +27,13 @@
 │   ├── temporal_factors_impact_report.md # 时间因素影响分析报告
 │   ├── project_report.md           # 基础项目报告
 │   └── beginner_report.md          # 初学者报告
+├── dataset/                        # 🆕 原始数据文件
+│   ├── trans_1.csv                 # 变压器1数据
+│   ├── trans_2.csv                 # 变压器2数据
+│   └── README.md                   # 数据说明
+├── notebooks/                      # 🆕 Jupyter Notebook实现
+│   ├── rnn_resnet_oil_temperature_prediction.ipynb  # RNN-ResNet模型
+│   └── rnn_resnet_README.md        # RNN-ResNet使用说明
 ├── Windows_diff/                   # 🆕 时间窗口长度实验
 │   ├── docs/                       # 实验文档和报告
 │   │   ├── window_length_analysis_report.md    # 详细分析报告
@@ -57,6 +65,7 @@
 ├── models/                         # 训练好的模型
 │   ├── traditional_ml/             # 传统机器学习模型
 │   ├── deep_learning/              # 深度学习模型
+│   ├── rnn_resnet/                 # 🆕 RNN-ResNet混合模型（PyTorch）
 │   └── scalers/                    # 数据标准化器
 ├── tutorial/                       # 教程文档
 │   ├── README.md                   # 教程入口
@@ -88,7 +97,19 @@
 
 ## 🚀 快速开始
 
-### 运行时间窗口长度实验（最新）
+### 运行RNN-ResNet混合模型（最新推荐）
+```bash
+# 1. 安装PyTorch（Windows CUDA）
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# 2. 启动Jupyter Notebook
+jupyter notebook
+
+# 3. 打开并运行 notebooks/rnn_resnet_oil_temperature_prediction.ipynb
+# 详细说明见 notebooks/rnn_resnet_README.md
+```
+
+### 运行时间窗口长度实验
 ```bash
 # 进入实验目录
 cd Windows_diff
@@ -192,6 +213,17 @@ python scripts/analysis/seasonal_analysis.py
   - 小型：50→25个神经元
   - 中型：100→50→25个神经元
   - 大型：200→100→50→25个神经元
+- **🆕 RNN-ResNet混合模型**: 基于PyTorch的时序深度学习模型
+  - **LSTM-ResNet**: 双向LSTM(64) + 2个ResNet块(128)
+    - 捕获长期时序依赖
+    - 深度特征学习
+    - ~400K参数
+  - **GRU-ResNet**: 双向GRU(64) + 2个ResNet块(128)
+    - 更快的训练速度
+    - 较少的参数量
+    - ~300K参数
+  - GPU (CUDA)加速训练
+  - 完整Jupyter Notebook实现
 
 ## 📈 评估指标
 
