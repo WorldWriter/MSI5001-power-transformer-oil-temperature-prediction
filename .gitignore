@@ -53,7 +53,7 @@ venv.bak/
 # *.model
 
 # Large data files
-*.csv
+# *.csv  # 注释掉以允许上传CSV数据文件
 *.npy
 
 # Results that can be regenerated
