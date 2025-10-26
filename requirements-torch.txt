@@ -1,0 +1,32 @@
+# PyTorch Dependencies for CUDA 12.1 (RTX 4070 Ti Super)
+# PyTorch CUDA 12.1 依赖 (RTX 4070 Ti Super 显卡)
+# ========================================================
+
+# IMPORTANT: Install PyTorch with CUDA support using the command below
+# 重要：使用以下命令安装支持 CUDA 的 PyTorch
+#
+# For CUDA 12.1 / 针对 CUDA 12.1:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# Or for latest stable version / 或安装最新稳定版:
+# pip install torch torchvision
+
+# PyTorch and related packages / PyTorch 及相关包
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.1.0
+torchvision>=0.16.0
+
+# Alternative installation methods / 其他安装方式:
+# =============================================
+#
+# 1. CUDA 12.1 (Recommended for RTX 4070 Ti Super / 推荐用于 RTX 4070 Ti Super):
+#    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# 2. CUDA 11.8 (Fallback option / 备用选项):
+#    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+#
+# 3. CPU only (No GPU / 仅 CPU):
+#    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# Check installation / 验证安装:
+# python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda if torch.cuda.is_available() else \"N/A\"}')"
