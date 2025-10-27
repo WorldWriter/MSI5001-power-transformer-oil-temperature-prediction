@@ -1,0 +1,3 @@
+transformer_id,total_rows,iqr_outliers,rolling_z_outliers,joint_outliers,physical_outliers,combined_outliers
+1,69680,2290,1887,27,0,4118
+2,69680,933,1874,21,0,2761

@@ -1,0 +1,10 @@
+,dtype,is_numeric
+date,datetime64[ns],False
+HUFL,float64,True
+HULL,float64,True
+MUFL,float64,True
+MULL,float64,True
+LUFL,float64,True
+LULL,float64,True
+OT,float64,True
+transformer_id,int64,True
