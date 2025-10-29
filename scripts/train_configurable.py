@@ -1,0 +1,487 @@
+"""
+Configurable training script for systematic experiments.
+
+This script provides a unified interface for training models with various
+configurations for data splitting, feature selection, and window parameters.
+
+Usage Examples:
+    # Time-series split with RandomForest
+    python -m scripts.train_configurable --tx-id 1 --model RandomForest \\
+        --split-method chronological --feature-mode full
+
+    # Random window split with MLP
+    python -m scripts.train_configurable --tx-id 1 --model MLP \\
+        --split-method random_window --lookback-multiplier 4 --horizon 1
+
+    # Group random split with custom features
+    python -m scripts.train_configurable --tx-id 1 --model Ridge \\
+        --split-method group_random --feature-mode time_only
+
+    # Use preprocessed data with specific suffix
+    python -m scripts.train_configurable --tx-id 1 --model RandomForest \\
+        --data-suffix "_1pct" --split-method random_window
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+from models.pytorch_mlp import PyTorchMLPRegressor
+
+from .common import (
+    CLEAN_DIR,
+    FIG_DIR,
+    TABLE_DIR,
+    TARGET_COL,
+    add_time_features,
+)
+from .experiment_utils import (
+    chronological_split,
+    group_random_split,
+    select_features_by_mode,
+    WindowConfig,
+    create_window_config,
+)
+
+
+# Model builders with default hyperparameters
+MODEL_BUILDERS = {
+    "RandomForest": lambda: RandomForestRegressor(
+        n_estimators=120,
+        max_depth=12,
+        min_samples_leaf=5,
+        random_state=42,
+        n_jobs=-1
+    ),
+    "MLP": lambda: PyTorchMLPRegressor(
+        hidden_layer_sizes=(128, 64),
+        activation="relu",
+        learning_rate_init=1e-3,
+        alpha=1e-4,
+        max_iter=120,
+        batch_size=64,
+        random_state=42,
+        early_stopping=True,
+        verbose=False,
+        device="auto",
+    ),
+    "LinearRegression": lambda: LinearRegression(),
+    "Ridge": lambda: Ridge(alpha=5.0, random_state=42),
+}
+
+
+def load_dataset(tx_id: int, data_suffix: str = "") -> pd.DataFrame:
+    """
+    Load cleaned dataset for a transformer.
+
+    Parameters
+    ----------
+    tx_id : int
+        Transformer ID (1 or 2)
+    data_suffix : str
+        Data file suffix (e.g., '_1pct', '_no_outlier')
+
+    Returns
+    -------
+    pd.DataFrame
+        Loaded dataframe
+    """
+    filename = f"tx{tx_id}_cleaned{data_suffix}.csv"
+    filepath = CLEAN_DIR / filename
+
+    if not filepath.exists():
+        raise FileNotFoundError(
+            f"Data file not found: {filepath}\n"
+            f"Please run preprocessing first with the same suffix."
+        )
+
+    df = pd.read_csv(filepath, parse_dates=["date"])
+    df = df.sort_values("date").reset_index(drop=True)
+    return df
+
+
+def enrich_tx1_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add TX1-specific dynamic features."""
+    enriched = df.copy()
+    enriched["HULL_diff1"] = enriched["HULL"].diff().fillna(0)
+    enriched["MULL_diff1"] = enriched["MULL"].diff().fillna(0)
+    enriched["HULL_roll12"] = enriched["HULL"].rolling(window=12, min_periods=1).mean()
+    enriched["MULL_roll12"] = enriched["MULL"].rolling(window=12, min_periods=1).mean()
+    return enriched
+
+
+def create_sliding_windows(
+    df: pd.DataFrame,
+    feature_cols: List[str],
+    window_config: WindowConfig,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Create sliding windows from time series data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    feature_cols : List[str]
+        Feature column names
+    window_config : WindowConfig
+        Window configuration
+
+    Returns
+    -------
+    X : np.ndarray
+        Windowed features (shape: [n_windows, lookback * n_features])
+    y : np.ndarray
+        Target values (shape: [n_windows])
+    timestamps : np.ndarray
+        Timestamps for each window
+    """
+    values = df[feature_cols].to_numpy(dtype=np.float32)
+    targets = df[TARGET_COL].to_numpy(dtype=np.float32)
+    timestamps = df["date"].to_numpy()
+
+    X_list: List[np.ndarray] = []
+    y_list: List[float] = []
+    ts_list: List[np.datetime64] = []
+
+    lookback = window_config.lookback
+    horizon = window_config.horizon
+    gap = window_config.gap
+
+    for target_idx in range(lookback + gap + horizon, len(df)):
+        window_end = target_idx - horizon - gap
+        window_start = window_end - lookback
+
+        if window_start < 0:
+            continue
+
+        window = values[window_start:window_end]
+        X_list.append(window.reshape(-1))
+        y_list.append(targets[target_idx])
+        ts_list.append(timestamps[target_idx])
+
+    return np.array(X_list), np.array(y_list), np.array(ts_list)
+
+
+def evaluate_model(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    """Calculate evaluation metrics."""
+    return {
+        "RMSE": float(np.sqrt(mean_squared_error(y_true, y_pred))),
+        "MAE": float(mean_absolute_error(y_true, y_pred)),
+        "R2": float(r2_score(y_true, y_pred)),
+    }
+
+
+def plot_predictions(
+    timestamps: np.ndarray,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    output_path: Path,
+    title: str,
+) -> None:
+    """Plot prediction results."""
+    plt.figure(figsize=(12, 4))
+
+    # Sort by timestamp for better visualization
+    sort_idx = np.argsort(timestamps)
+    ts_sorted = timestamps[sort_idx]
+    y_true_sorted = y_true[sort_idx]
+    y_pred_sorted = y_pred[sort_idx]
+
+    # Limit to first 1000 points if too many
+    if len(ts_sorted) > 1000:
+        step = len(ts_sorted) // 1000
+        ts_sorted = ts_sorted[::step]
+        y_true_sorted = y_true_sorted[::step]
+        y_pred_sorted = y_pred_sorted[::step]
+
+    plt.plot(ts_sorted, y_true_sorted, label="Actual", linewidth=1.5, alpha=0.8)
+    plt.plot(ts_sorted, y_pred_sorted, label="Predicted", linewidth=1.5, alpha=0.8)
+    plt.title(title)
+    plt.xlabel("Timestamp")
+    plt.ylabel("Oil Temperature (°C)")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
+def plot_scatter(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    output_path: Path,
+    title: str,
+) -> None:
+    """Plot scatter plot of predictions vs actual."""
+    plt.figure(figsize=(6, 6))
+    sns.scatterplot(x=y_true, y=y_pred, alpha=0.4, s=20)
+    plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()],
+             "r--", linewidth=1.2)
+    plt.title(title)
+    plt.xlabel("Actual OT (°C)")
+    plt.ylabel("Predicted OT (°C)")
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Configurable model training for experiments"
+    )
+
+    # Data configuration
+    parser.add_argument("--tx-id", type=int, required=True, choices=[1, 2],
+                       help="Transformer ID")
+    parser.add_argument("--data-suffix", type=str, default="",
+                       help="Data file suffix (e.g., '_1pct', '_no_outlier')")
+
+    # Model configuration
+    parser.add_argument("--model", type=str, required=True,
+                       choices=list(MODEL_BUILDERS.keys()),
+                       help="Model to train")
+
+    # Data splitting configuration
+    parser.add_argument("--split-method", type=str, required=True,
+                       choices=["chronological", "random_window", "group_random"],
+                       help="Data splitting method")
+    parser.add_argument("--test-ratio", type=float, default=0.2,
+                       help="Test set ratio (default: 0.2)")
+    parser.add_argument("--n-groups", type=int, default=20,
+                       help="Number of groups for group_random split (default: 20)")
+    parser.add_argument("--random-state", type=int, default=42,
+                       help="Random seed (default: 42)")
+
+    # Feature configuration
+    parser.add_argument("--feature-mode", type=str, default="full",
+                       choices=["full", "time_only", "no_time"],
+                       help="Feature selection mode (default: full)")
+
+    # Window configuration (for random_window and group_random)
+    parser.add_argument("--lookback-multiplier", type=float, default=4.0,
+                       help="Lookback window size as multiple of horizon (default: 4.0)")
+    parser.add_argument("--horizon", type=int, default=1,
+                       help="Prediction horizon in steps (default: 1)")
+    parser.add_argument("--gap", type=int, default=0,
+                       help="Gap between lookback and target (default: 0)")
+    parser.add_argument("--max-windows", type=int, default=40000,
+                       help="Max sliding windows to use (default: 40000)")
+
+    # Output configuration
+    parser.add_argument("--output-dir", type=str, default="",
+                       help="Custom output directory (default: auto-generated)")
+    parser.add_argument("--experiment-name", type=str, default="",
+                       help="Experiment name for output files")
+
+    args = parser.parse_args()
+
+    # Setup output directory
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+    else:
+        output_dir = Path(__file__).resolve().parents[1] / "models" / "experiments"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate experiment identifier
+    if args.experiment_name:
+        exp_id = args.experiment_name
+    else:
+        exp_id = (f"tx{args.tx_id}_{args.model}_{args.split_method}_"
+                 f"{args.feature_mode}{args.data_suffix}")
+
+    print("="*70)
+    print(f"Experiment: {exp_id}")
+    print("="*70)
+    print(f"Transformer:     TX{args.tx_id}")
+    print(f"Model:           {args.model}")
+    print(f"Split method:    {args.split_method}")
+    print(f"Feature mode:    {args.feature_mode}")
+    print(f"Data suffix:     {args.data_suffix if args.data_suffix else '(default)'}")
+
+    # Load data
+    print(f"\nLoading data...")
+    df = load_dataset(args.tx_id, args.data_suffix)
+    print(f"  Total samples: {len(df)}")
+
+    # Add TX1-specific features if needed
+    if args.tx_id == 1 and args.feature_mode != "time_only":
+        df = enrich_tx1_features(df)
+        print(f"  Added TX1 dynamic features")
+
+    # Select features
+    include_tx1_dynamic = (args.tx_id == 1 and args.feature_mode != "time_only")
+    feature_cols = select_features_by_mode(args.feature_mode, include_tx1_dynamic)
+    print(f"  Features: {len(feature_cols)} columns")
+
+    # Prepare data based on split method
+    start_time = time.time()
+
+    if args.split_method == "chronological":
+        # Simple chronological split (no sliding windows)
+        print(f"\nSplitting data (chronological, {int(args.test_ratio*100)}% test)...")
+        train_df, test_df = chronological_split(df, train_ratio=1-args.test_ratio)
+
+        X_train = train_df[feature_cols].to_numpy(dtype=np.float32)
+        y_train = train_df[TARGET_COL].to_numpy(dtype=np.float32)
+        X_test = test_df[feature_cols].to_numpy(dtype=np.float32)
+        y_test = test_df[TARGET_COL].to_numpy(dtype=np.float32)
+        ts_test = test_df["date"].to_numpy()
+
+        print(f"  Train: {len(X_train)} samples")
+        print(f"  Test:  {len(X_test)} samples")
+
+    elif args.split_method in ["random_window", "group_random"]:
+        # Create sliding windows first
+        window_config = create_window_config(
+            horizon=args.horizon,
+            lookback_multiplier=args.lookback_multiplier,
+            gap=args.gap
+        )
+        print(f"\nWindow config: {window_config}")
+
+        print(f"Creating sliding windows...")
+        X, y, timestamps = create_sliding_windows(df, feature_cols, window_config)
+        print(f"  Created {len(X)} windows")
+
+        # Limit windows if specified
+        if args.max_windows and len(X) > args.max_windows:
+            print(f"  Sampling {args.max_windows} windows...")
+            rng = np.random.default_rng(args.random_state)
+            indices = rng.choice(len(X), size=args.max_windows, replace=False)
+            X = X[indices]
+            y = y[indices]
+            timestamps = timestamps[indices]
+
+        # Split windows
+        if args.split_method == "random_window":
+            print(f"Splitting windows (random, {int(args.test_ratio*100)}% test)...")
+            X_train, X_test, y_train, y_test, _, ts_test = train_test_split(
+                X, y, timestamps,
+                test_size=args.test_ratio,
+                random_state=args.random_state,
+                shuffle=True
+            )
+        else:  # group_random
+            print(f"Splitting windows (group random, {args.n_groups} groups, {int(args.test_ratio*100)}% test)...")
+            # Create a temporary dataframe for group split
+            temp_df = pd.DataFrame({
+                'date': timestamps,
+                TARGET_COL: y
+            })
+            # Add X as columns
+            for i in range(X.shape[1]):
+                temp_df[f'X_{i}'] = X[:, i]
+
+            train_df, test_df = group_random_split(
+                temp_df,
+                n_groups=args.n_groups,
+                test_ratio=args.test_ratio,
+                random_state=args.random_state
+            )
+
+            X_cols = [f'X_{i}' for i in range(X.shape[1])]
+            X_train = train_df[X_cols].to_numpy(dtype=np.float32)
+            X_test = test_df[X_cols].to_numpy(dtype=np.float32)
+            y_train = train_df[TARGET_COL].to_numpy(dtype=np.float32)
+            y_test = test_df[TARGET_COL].to_numpy(dtype=np.float32)
+            ts_test = test_df["date"].to_numpy()
+
+        print(f"  Train: {len(X_train)} windows")
+        print(f"  Test:  {len(X_test)} windows")
+
+    # Train model
+    print(f"\nTraining {args.model}...")
+    model = MODEL_BUILDERS[args.model]()
+    model.fit(X_train, y_train)
+    train_time = time.time() - start_time
+    print(f"  Training time: {train_time:.2f}s")
+
+    # Evaluate
+    print(f"\nEvaluating...")
+    y_pred = model.predict(X_test)
+    metrics = evaluate_model(y_test, y_pred)
+
+    print(f"  RMSE: {metrics['RMSE']:.4f}")
+    print(f"  MAE:  {metrics['MAE']:.4f}")
+    print(f"  R²:   {metrics['R2']:.4f}")
+
+    # Save results
+    print(f"\nSaving results...")
+
+    # Save model
+    model_path = output_dir / f"{exp_id}_model.joblib"
+    joblib.dump(model, model_path)
+    print(f"  Model: {model_path}")
+
+    # Save predictions
+    pred_df = pd.DataFrame({
+        "timestamp": ts_test,
+        "actual": y_test,
+        "predicted": y_pred
+    }).sort_values("timestamp")
+    pred_path = TABLE_DIR / f"{exp_id}_predictions.csv"
+    pred_df.to_csv(pred_path, index=False)
+    print(f"  Predictions: {pred_path}")
+
+    # Save metrics
+    metrics_data = {
+        "experiment_id": exp_id,
+        "transformer_id": args.tx_id,
+        "model": args.model,
+        "split_method": args.split_method,
+        "feature_mode": args.feature_mode,
+        "data_suffix": args.data_suffix,
+        "test_ratio": args.test_ratio,
+        "n_features": len(feature_cols),
+        "n_train": len(X_train),
+        "n_test": len(X_test),
+        "train_time": train_time,
+        **metrics
+    }
+
+    if args.split_method in ["random_window", "group_random"]:
+        metrics_data.update({
+            "lookback": window_config.lookback,
+            "horizon": window_config.horizon,
+            "gap": window_config.gap,
+            "lookback_multiplier": args.lookback_multiplier,
+        })
+
+    metrics_path = output_dir / f"{exp_id}_metrics.json"
+    with open(metrics_path, "w") as f:
+        json.dump(metrics_data, f, indent=2)
+    print(f"  Metrics: {metrics_path}")
+
+    # Plot predictions
+    plot_path = FIG_DIR / f"{exp_id}_predictions.png"
+    plot_predictions(ts_test, y_test, y_pred, plot_path,
+                    f"TX{args.tx_id} - {args.model} - {args.split_method}")
+    print(f"  Plot: {plot_path}")
+
+    # Plot scatter
+    scatter_path = FIG_DIR / f"{exp_id}_scatter.png"
+    plot_scatter(y_test, y_pred, scatter_path,
+                f"TX{args.tx_id} - {args.model}")
+    print(f"  Scatter: {scatter_path}")
+
+    print("\n" + "="*70)
+    print(f"Experiment complete: {exp_id}")
+    print("="*70)
+
+
+if __name__ == "__main__":
+    main()
