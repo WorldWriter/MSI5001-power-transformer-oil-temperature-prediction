@@ -13,7 +13,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPRegressor
+
+from models.pytorch_mlp import PyTorchMLPRegressor
 
 from .common import (
     CLEAN_DIR,
@@ -69,14 +70,17 @@ MODEL_BUILDERS = {
     "RandomForest": lambda: RandomForestRegressor(
         n_estimators=120, max_depth=12, min_samples_leaf=5, random_state=42, n_jobs=-1
     ),
-    "MLP": lambda: MLPRegressor(
+    "MLP": lambda: PyTorchMLPRegressor(
         hidden_layer_sizes=(128, 64),
         activation="relu",
         learning_rate_init=1e-3,
         alpha=1e-4,
         max_iter=120,
+        batch_size=64,
         random_state=42,
         early_stopping=True,
+        verbose=True,
+        device="auto",
     ),
 }
 

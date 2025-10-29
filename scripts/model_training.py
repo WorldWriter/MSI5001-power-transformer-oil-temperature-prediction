@@ -12,7 +12,8 @@ import pandas as pd
 import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.neural_network import MLPRegressor
+
+from models.pytorch_mlp import PyTorchMLPRegressor
 
 from .common import FIG_DIR, TABLE_DIR, TARGET_COL
 
@@ -64,14 +65,17 @@ def train_models(
         "RandomForest": RandomForestRegressor(
             n_estimators=120, max_depth=12, random_state=42, n_jobs=-1, min_samples_leaf=5
         ),
-        "MLP": MLPRegressor(
+        "MLP": PyTorchMLPRegressor(
             hidden_layer_sizes=(128, 64),
             activation="relu",
             alpha=1e-4,
             learning_rate_init=1e-3,
             max_iter=120,
+            batch_size=64,
             random_state=42,
             early_stopping=True,
+            verbose=True,
+            device="auto",
         ),
     }
     fitted = {}
