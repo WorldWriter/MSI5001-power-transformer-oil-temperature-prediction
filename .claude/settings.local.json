@@ -5,7 +5,8 @@
       "Bash(pip install:*)",
       "Bash(tree:*)",
       "Bash(git pull:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
