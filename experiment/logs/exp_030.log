@@ -1,7 +1,7 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-30 15:08:21
-Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model MLP --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_030
+Started: 2025-10-30 16:39:46
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model MLP --split-method random_window --feature-mode full --lookback-multiplier 6.0 --horizon 1 --experiment-name exp_030
 ======================================================================
 
 ======================================================================
@@ -18,9 +18,9 @@ Loading data...
   Added TX1 dynamic features
   Features: 21 columns
 
-Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Window config: WindowConfig(horizon=1, lookback=6, gap=0)
 Creating sliding windows...
-  Created 65557 windows
+  Created 65555 windows
   Sampling 40000 windows...
 Splitting windows (random, 20% test)...
   Train: 32000 windows
@@ -28,12 +28,12 @@ Splitting windows (random, 20% test)...
 
 Training MLP...
 Using Apple Silicon GPU (MPS)
-  Training time: 111.84s
+  Training time: 174.12s
 
 Evaluating...
-  RMSE: 2.9281
-  MAE:  2.1910
-  R2:   0.8522
+  RMSE: 2.8018
+  MAE:  2.0543
+  R2:   0.8655
 
 Saving results...
   Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_030_model.joblib
@@ -47,6 +47,6 @@ Experiment complete: exp_030
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-30 15:10:16
+Completed: 2025-10-30 16:42:43
 Return code: 0
 ======================================================================

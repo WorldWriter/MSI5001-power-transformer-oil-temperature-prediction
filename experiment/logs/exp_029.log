@@ -1,6 +1,6 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-30 15:06:27
+Started: 2025-10-30 16:37:34
 Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model MLP --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_029
 ======================================================================
 
@@ -28,7 +28,7 @@ Splitting windows (random, 20% test)...
 
 Training MLP...
 Using Apple Silicon GPU (MPS)
-  Training time: 110.88s
+  Training time: 128.69s
 
 Evaluating...
   RMSE: 2.9281
@@ -47,6 +47,6 @@ Experiment complete: exp_029
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-30 15:08:21
+Completed: 2025-10-30 16:39:46
 Return code: 0
 ======================================================================
