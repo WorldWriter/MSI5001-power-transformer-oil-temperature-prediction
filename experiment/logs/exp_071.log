@@ -1,0 +1,46 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 19:20:43
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method chronological --feature-mode time_only --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_071
+======================================================================
+
+======================================================================
+Experiment: exp_071
+======================================================================
+Transformer:     TX1
+Model:           RandomForest
+Split method:    chronological
+Feature mode:    time_only
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 65562
+  Features: 15 columns
+
+Splitting data (chronological, 20% test)...
+  Train: 52449 samples
+  Test:  13113 samples
+
+Training RandomForest...
+  Training time: 0.88s
+
+Evaluating...
+  RMSE: 7.6156
+  MAE:  6.5310
+  R2:   -4.0505
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_071_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_071_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_071_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_071_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_071_scatter.png
+
+======================================================================
+Experiment complete: exp_071
+======================================================================
+
+======================================================================
+Completed: 2025-10-30 19:20:48
+Return code: 0
+======================================================================

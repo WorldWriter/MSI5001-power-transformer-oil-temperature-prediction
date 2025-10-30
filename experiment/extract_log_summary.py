@@ -211,8 +211,14 @@ def create_summary_table(logs_dir, config_df):
 def main():
     """Main function."""
     
-    # 设置路径
-    project_root = Path('/Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction')
+    # 导入platform模块以检测操作系统
+    import platform
+    
+    # 简化的操作系统路径判断
+    system = platform.system()
+    project_root = Path('e:\\ANUS_learning\\MSI5001-power-transformer-oil-temperature-prediction') if system == 'Windows' else Path('/Users/dafeng/workspace/MSI5001-power-transformer-oil-temperature-prediction')
+    
+    # 构建其他路径
     logs_dir = project_root / 'experiment' / 'logs'
     config_path = project_root / 'experiment' / 'experiment_group.csv'
     output_path = project_root / 'experiment' / 'experiment_results_summary.csv'

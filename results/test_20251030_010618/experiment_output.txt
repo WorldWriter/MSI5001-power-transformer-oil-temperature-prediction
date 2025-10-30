@@ -1,0 +1,8 @@
+
+=== Transformer 1 ===
+Using window multiplier: 4x
+Config 1h: lookback=48, horizon=1, gap=0
+Config 1d: lookback=96, horizon=24, gap=6
+Config 1w: lookback=336, horizon=168, gap=24
+
+Horizon experiments complete.

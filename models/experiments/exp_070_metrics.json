@@ -1,0 +1,20 @@
+{
+  "experiment_id": "exp_070",
+  "transformer_id": 1,
+  "model": "RandomForest",
+  "split_method": "random_window",
+  "feature_mode": "time_only",
+  "data_suffix": "",
+  "test_ratio": 0.2,
+  "n_features": 15,
+  "n_train": 32000,
+  "n_test": 8000,
+  "train_time": 2.3627371788024902,
+  "RMSE": 2.995410193014888,
+  "MAE": 2.2389290971208413,
+  "R2": 0.8453207669528595,
+  "lookback": 4,
+  "horizon": 1,
+  "gap": 0,
+  "lookback_multiplier": 4.0
+}

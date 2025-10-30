@@ -9,12 +9,12 @@
   "n_features": 21,
   "n_train": 32000,
   "n_test": 8000,
-  "train_time": 7.222796678543091,
-  "RMSE": 2.0009532938980734,
-  "MAE": 1.3414750059243332,
-  "R2": 0.9309770834488792,
-  "lookback": 4,
+  "train_time": 3.6536145210266113,
+  "RMSE": 1.982186773630446,
+  "MAE": 1.319155146820197,
+  "R2": 0.9333291895394786,
+  "lookback": 2,
   "horizon": 1,
   "gap": 0,
-  "lookback_multiplier": 4.0
+  "lookback_multiplier": 2.0
 }

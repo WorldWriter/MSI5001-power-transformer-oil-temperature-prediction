@@ -1,7 +1,7 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-30 15:18:09
-Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model RNN --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_046
+Started: 2025-10-30 17:19:24
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RNN --split-method random_window --feature-mode full --lookback-multiplier 2.0 --horizon 1 --experiment-name exp_046
 ======================================================================
 
 ======================================================================
@@ -18,35 +18,35 @@ Loading data...
   Added TX1 dynamic features
   Features: 21 columns
 
-Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Window config: WindowConfig(horizon=1, lookback=2, gap=0)
 Creating sliding windows for RNN (keeping sequence structure)...
-  Created 65557 windows (shape: (65557, 4, 21))
+  Created 65559 windows (shape: (65559, 2, 21))
   Sampling 40000 windows...
 Splitting windows (random, 20% test)...
   Train: 32000 windows
   Test:  8000 windows
 
 Training RNN...
-Using Apple Silicon GPU (MPS)
-  Training time: 777.90s
+Using GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+  Training time: 136.23s
 
 Evaluating...
-  RMSE: 3.0529
-  MAE:  2.1714
-  R2:   0.8393
+  RMSE: 3.2784
+  MAE:  2.4212
+  R2:   0.8176
 
 Saving results...
-  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_046_model.joblib
-  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_046_predictions.csv
-  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_046_metrics.json
-  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_046_predictions.png
-  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_046_scatter.png
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_046_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_046_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_046_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_046_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_046_scatter.png
 
 ======================================================================
 Experiment complete: exp_046
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-30 15:31:11
+Completed: 2025-10-30 17:21:44
 Return code: 0
 ======================================================================

@@ -1,0 +1,6 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 14:20:23
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_016
+======================================================================
+

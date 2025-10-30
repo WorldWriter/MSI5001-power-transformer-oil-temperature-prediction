@@ -1,0 +1,50 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 19:20:48
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method group_random --feature-mode time_only --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_072
+======================================================================
+
+======================================================================
+Experiment: exp_072
+======================================================================
+Transformer:     TX1
+Model:           RandomForest
+Split method:    group_random
+Feature mode:    time_only
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 65562
+  Features: 15 columns
+
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 65557 windows
+  Sampling 40000 windows...
+Splitting windows (group random, 20 groups, 20% test)...
+  Train: 32000 windows
+  Test:  8000 windows
+
+Training RandomForest...
+  Training time: 2.25s
+
+Evaluating...
+  RMSE: 8.8186
+  MAE:  7.6339
+  R2:   -0.5516
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_072_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_072_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_072_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_072_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_072_scatter.png
+
+======================================================================
+Experiment complete: exp_072
+======================================================================
+
+======================================================================
+Completed: 2025-10-30 19:20:54
+Return code: 0
+======================================================================
