@@ -19,6 +19,7 @@ import pandas as pd
 # ============================================================================
 
 LOAD_FEATURES = ["HULL", "MULL"]
+LOAD_FEATURES_FULL = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL"]  # All 6 load features
 
 TIME_FEATURES = [
     "hour",
@@ -48,7 +49,8 @@ TX1_DYNAMIC_FEATURES = [
 
 def select_features_by_mode(
     feature_mode: str = "full",
-    include_tx1_dynamic: bool = False
+    include_tx1_dynamic: bool = False,
+    use_full_loads: bool = False
 ) -> List[str]:
     """
     Select feature columns based on experiment mode.
@@ -62,6 +64,9 @@ def select_features_by_mode(
         - 'no_time': Only load features
     include_tx1_dynamic : bool
         Whether to include TX1-specific dynamic features (diff, rolling mean)
+    use_full_loads : bool
+        Whether to use all 6 load features (HUFL, HULL, MUFL, MULL, LUFL, LULL)
+        instead of just 2 (HULL, MULL)
 
     Returns
     -------
@@ -71,9 +76,9 @@ def select_features_by_mode(
     if feature_mode == "time_only":
         features = TIME_FEATURES.copy()
     elif feature_mode == "no_time":
-        features = LOAD_FEATURES.copy()
+        features = LOAD_FEATURES_FULL.copy() if use_full_loads else LOAD_FEATURES.copy()
     elif feature_mode == "full":
-        features = LOAD_FEATURES.copy()
+        features = LOAD_FEATURES_FULL.copy() if use_full_loads else LOAD_FEATURES.copy()
         features.extend(TIME_FEATURES)
     else:
         raise ValueError(f"Unknown feature_mode: {feature_mode}. "

@@ -98,24 +98,82 @@ MODEL_BUILDERS = {
         verbose=False,
         device="auto",
     ),
-    "Informer": lambda: PyTorchInformerRegressor(
-        seq_len=96,
-        label_len=48,
-        pred_len=24,
-        d_model=512,
+    # Informer variants for different horizons (GPU memory optimized)
+    "Informer-Short": lambda: PyTorchInformerRegressor(
+        # Short-term prediction (1 hour horizon)
+        seq_len=32,        # 32 hours lookback
+        label_len=16,      # 16 hours decoder start
+        pred_len=1,        # Single-step prediction
+        # Model architecture (compact for short sequences)
+        d_model=256,       # Reduced from 512
         n_heads=8,
         e_layers=2,
         d_layers=1,
-        d_ff=2048,
+        d_ff=1024,         # Reduced from 2048
+        # Informer-specific
         factor=5,
         dropout=0.05,
         attn='prob',
         activation='gelu',
+        # Training config
         learning_rate_init=1e-4,
-        max_iter=10,
-        batch_size=32,
+        max_iter=30,
+        batch_size=32,     # Can afford larger batch for short sequences
         random_state=42,
         early_stopping=True,
+        n_iter_no_change=5,
+        verbose=False,
+        device="auto",
+    ) if INFORMER_AVAILABLE else None,
+    "Informer": lambda: PyTorchInformerRegressor(
+        # Medium-term prediction (1 day horizon)
+        seq_len=96,        # 96 hours (4 days) lookback
+        label_len=48,      # 48 hours (2 days) decoder start
+        pred_len=24,       # 1 day prediction
+        # Model architecture (balanced configuration)
+        d_model=256,       # GPU memory optimized
+        n_heads=8,
+        e_layers=2,
+        d_layers=1,
+        d_ff=1024,         # GPU memory optimized
+        # Informer-specific
+        factor=5,
+        dropout=0.05,
+        attn='prob',
+        activation='gelu',
+        # Training config
+        learning_rate_init=1e-4,
+        max_iter=30,
+        batch_size=16,     # Reduced for GPU memory
+        random_state=42,
+        early_stopping=True,
+        n_iter_no_change=5,
+        verbose=False,
+        device="auto",
+    ) if INFORMER_AVAILABLE else None,
+    "Informer-Long": lambda: PyTorchInformerRegressor(
+        # Long-term prediction (1 week horizon)
+        seq_len=336,       # 336 hours (2 weeks) lookback
+        label_len=168,     # 168 hours (1 week) decoder start
+        pred_len=168,      # 1 week prediction
+        # Model architecture (optimized for long sequences)
+        d_model=256,       # Keep compact for GPU memory
+        n_heads=8,
+        e_layers=3,        # More layers for long-term dependencies
+        d_layers=1,
+        d_ff=1024,         # Keep compact for GPU memory
+        # Informer-specific
+        factor=5,          # ProbSparse attention crucial for long sequences
+        dropout=0.05,
+        attn='prob',
+        activation='gelu',
+        # Training config
+        learning_rate_init=1e-4,
+        max_iter=20,       # Fewer epochs for long sequences
+        batch_size=8,      # Small batch for GPU memory
+        random_state=42,
+        early_stopping=True,
+        n_iter_no_change=5,
         verbose=False,
         device="auto",
     ) if INFORMER_AVAILABLE else None,
@@ -424,7 +482,11 @@ def main() -> None:
 
     # Select features
     include_tx1_dynamic = (args.tx_id == 1 and args.feature_mode != "time_only")
-    feature_cols = select_features_by_mode(args.feature_mode, include_tx1_dynamic)
+    use_full_loads = (args.feature_mode == "full_6loads")
+
+    # Map full_6loads to full for the function call
+    feature_mode_mapped = "full" if args.feature_mode == "full_6loads" else args.feature_mode
+    feature_cols = select_features_by_mode(feature_mode_mapped, include_tx1_dynamic, use_full_loads)
     print(f"  Features: {len(feature_cols)} columns")
 
     # Prepare data based on split method
@@ -454,7 +516,7 @@ def main() -> None:
         print(f"\nWindow config: {window_config}")
 
         # Check if model is RNN or Informer (requires 3D sequential data)
-        is_sequence_model = args.model in ["RNN", "Informer"]
+        is_sequence_model = args.model in ["RNN", "Informer", "Informer-Short", "Informer-Long"]
 
         if is_sequence_model:
             print(f"Creating sliding windows for {args.model} (keeping sequence structure)...")

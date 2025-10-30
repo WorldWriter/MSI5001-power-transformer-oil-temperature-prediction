@@ -209,11 +209,12 @@ class PyTorchInformerRegressor:
         # For time marks, we use normalized sin/cos time features if available
         # TimeFeatureEmbedding for freq='h' expects 4 features
         # We'll use the first 4 sin/cos encoded features: hour_sin, hour_cos, dow_sin, dow_cos
-        # These are typically features 7-10 in our feature set if following common.py order
-        # For simplicity, we'll use features 7,8,9,10 if available, otherwise create dummy features
+        # Feature indices based on experiment_utils.py:
+        # 0-1: HULL, MULL; 2-5: hour, dayofweek, month, day_of_year
+        # 6-7: hour_sin, hour_cos; 8-9: dow_sin, dow_cos
         if n_features >= 10:
-            # Extract sin/cos time features (indices 7-10)
-            time_features = X[:, :, 7:11]  # hour_sin, hour_cos, dow_sin, dow_cos
+            # Extract sin/cos time features (indices 6-9, which is 6:10 in Python slicing)
+            time_features = X[:, :, 6:10]  # hour_sin, hour_cos, dow_sin, dow_cos
         else:
             # Fallback: create dummy time features (all zeros)
             time_features = np.zeros((batch_size, actual_seq_len, 4), dtype=np.float32)
