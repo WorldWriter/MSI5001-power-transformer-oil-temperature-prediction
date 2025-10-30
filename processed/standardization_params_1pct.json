@@ -1,0 +1,62 @@
+{
+  "tx1": {
+    "HUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "HULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "MUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "MULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "LUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "LULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "OT": {
+      "method": "expanding_zscore",
+      "window": null
+    }
+  },
+  "tx2": {
+    "HUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "HULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "MUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "MULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "LUFL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "LULL": {
+      "method": "expanding_zscore",
+      "window": null
+    },
+    "OT": {
+      "method": "expanding_zscore",
+      "window": null
+    }
+  }
+}

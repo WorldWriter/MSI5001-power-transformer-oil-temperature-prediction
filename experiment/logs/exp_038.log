@@ -1,0 +1,51 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 15:13:51
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 2 --model MLP --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_038
+======================================================================
+
+======================================================================
+Experiment: exp_038
+======================================================================
+Transformer:     TX2
+Model:           MLP
+Split method:    random_window
+Feature mode:    full
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 66919
+  Features: 17 columns
+
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 66914 windows
+  Sampling 40000 windows...
+Splitting windows (random, 20% test)...
+  Train: 32000 windows
+  Test:  8000 windows
+
+Training MLP...
+Using Apple Silicon GPU (MPS)
+  Training time: 150.38s
+
+Evaluating...
+  RMSE: 3.3607
+  MAE:  2.5369
+  R2:   0.9208
+
+Saving results...
+  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_038_model.joblib
+  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_038_predictions.csv
+  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_038_metrics.json
+  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_038_predictions.png
+  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_038_scatter.png
+
+======================================================================
+Experiment complete: exp_038
+======================================================================
+
+======================================================================
+Completed: 2025-10-30 15:16:24
+Return code: 0
+======================================================================

@@ -1,0 +1,51 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 14:59:49
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method group_random --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_003
+======================================================================
+
+======================================================================
+Experiment: exp_003
+======================================================================
+Transformer:     TX1
+Model:           RandomForest
+Split method:    group_random
+Feature mode:    full
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 65562
+  Added TX1 dynamic features
+  Features: 21 columns
+
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 65557 windows
+  Sampling 40000 windows...
+Splitting windows (group random, 20 groups, 20% test)...
+  Train: 32000 windows
+  Test:  8000 windows
+
+Training RandomForest...
+  Training time: 6.92s
+
+Evaluating...
+  RMSE: 8.7984
+  MAE:  7.5184
+  R2:   -0.5445
+
+Saving results...
+  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_003_model.joblib
+  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_003_predictions.csv
+  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_003_metrics.json
+  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_003_predictions.png
+  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_003_scatter.png
+
+======================================================================
+Experiment complete: exp_003
+======================================================================
+
+======================================================================
+Completed: 2025-10-30 14:59:59
+Return code: 0
+======================================================================

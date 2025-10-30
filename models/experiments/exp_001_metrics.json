@@ -1,0 +1,16 @@
+{
+  "experiment_id": "exp_001",
+  "transformer_id": 1,
+  "model": "RandomForest",
+  "split_method": "chronological",
+  "feature_mode": "full",
+  "data_suffix": "",
+  "test_ratio": 0.2,
+  "n_features": 21,
+  "n_train": 52449,
+  "n_test": 13113,
+  "train_time": 3.0338099002838135,
+  "RMSE": 8.263795609131883,
+  "MAE": 7.269407418289967,
+  "R2": -4.946908445361388
+}

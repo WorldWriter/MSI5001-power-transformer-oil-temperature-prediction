@@ -1,6 +1,6 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-30 13:11:18
+Started: 2025-10-30 15:01:55
 Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_010
 ======================================================================
 
@@ -27,12 +27,12 @@ Splitting windows (random, 20% test)...
   Test:  8000 windows
 
 Training RandomForest...
-  Training time: 8.04s
+  Training time: 7.22s
 
 Evaluating...
   RMSE: 2.0010
   MAE:  1.3415
-  R²:   0.9310
+  R2:   0.9310
 
 Saving results...
   Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_010_model.joblib
@@ -46,6 +46,6 @@ Experiment complete: exp_010
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-30 13:11:29
+Completed: 2025-10-30 15:02:05
 Return code: 0
 ======================================================================
