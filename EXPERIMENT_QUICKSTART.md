@@ -54,7 +54,11 @@ python -m scripts.run_experiments \\
 ### 步骤4：运行批量实验
 
 ```bash
-# 运行前 3 个实验
+# 运行默认实验 (10, 28, 46)
+python -m scripts.run_experiments \\
+    --config experiment/experiment_group.csv
+
+# 运行指定实验
 python -m scripts.run_experiments \\
     --config experiment/experiment_group.csv \\
     --exp-ids 1,2,3
@@ -62,7 +66,20 @@ python -m scripts.run_experiments \\
 # 或运行所有实验（约需 2-4 小时）
 python -m scripts.run_experiments \\
     --config experiment/experiment_group.csv \\
+    --exp-ids 1,2,3,4,5,6,7,8,9,10 \\
     --run-preprocessing
+```
+
+### 步骤5：查看实验结果
+
+```bash
+# 查看实验指标汇总（包含 R², RMSE, MAE, MSE）
+cat experiment/metrics_summary.csv
+
+# 查看特定实验的训练日志
+cat experiment/logs/exp_010.log
+cat experiment/logs/exp_028.log
+cat experiment/logs/exp_046.log
 ```
 
 ---
@@ -91,6 +108,9 @@ python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-meth
 # 滑动窗口 + MLP
 python -m scripts.train_configurable --tx-id 1 --model MLP --split-method random_window
 
+# 滑动窗口 + RNN（新增！适合时序建模）
+python -m scripts.train_configurable --tx-id 1 --model RNN --split-method random_window
+
 # 使用特定预处理数据
 python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method random_window --data-suffix "_1pct"
 ```
@@ -98,7 +118,7 @@ python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-meth
 ### 批量运行实验
 
 ```bash
-# 运行所有实验
+# 运行默认实验 (10, 28, 46) - 推荐用于快速测试
 python -m scripts.run_experiments --config experiment/experiment_group.csv
 
 # 运行指定实验
@@ -106,17 +126,35 @@ python -m scripts.run_experiments --config experiment/experiment_group.csv --exp
 
 # 预览命令（不执行）
 python -m scripts.run_experiments --config experiment/experiment_group.csv --dry-run
+
+# 运行所有实验
+python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 1,2,3,...,45
 ```
 
 ---
 
 ## 结果文件位置
 
+### 实验结果汇总（新增！）
+- **实验指标汇总**: `experiment/metrics_summary.csv` - 包含所有实验的 R², RMSE, MAE, MSE
+- **训练日志**: `experiment/logs/exp_XXX.log` - 每个实验的完整训练输出
+
+### 模型和预测结果
 - **模型文件**: `models/experiments/exp_XXX_model.joblib`
 - **评估指标**: `models/experiments/exp_XXX_metrics.json`
 - **预测结果**: `tables/exp_XXX_predictions.csv`
 - **可视化图**: `figures/exp_XXX_predictions.png`
 - **结果汇总**: `models/experiments/experiment_summary.csv`
+
+### 快速查看结果示例
+
+```bash
+# 查看实验 10, 28, 46 的关键指标
+head -n 4 experiment/metrics_summary.csv | column -t -s,
+
+# 检查实验 10 的训练过程
+tail -n 50 experiment/logs/exp_010.log
+```
 
 ---
 

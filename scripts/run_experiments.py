@@ -21,10 +21,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -181,7 +183,7 @@ def build_training_command(params: Dict) -> List[str]:
     return cmd
 
 
-def run_command(cmd: List[str], dry_run: bool = False) -> bool:
+def run_command(cmd: List[str], dry_run: bool = False, log_file: Optional[Path] = None) -> bool:
     """
     Run a command and return success status.
 
@@ -191,6 +193,8 @@ def run_command(cmd: List[str], dry_run: bool = False) -> bool:
         Command to run
     dry_run : bool
         If True, only print command without running
+    log_file : Optional[Path]
+        If provided, capture output to this log file
 
     Returns
     -------
@@ -204,10 +208,49 @@ def run_command(cmd: List[str], dry_run: bool = False) -> bool:
         return True
 
     print(f"\nRunning: {cmd_str}")
+    if log_file:
+        print(f"  Logging to: {log_file}")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=False)
-        return result.returncode == 0
+        if log_file:
+            # Ensure log directory exists
+            log_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Capture output to both console and log file
+            with open(log_file, "w") as f:
+                # Write header to log file
+                f.write(f"{'='*70}\n")
+                f.write(f"Experiment Log\n")
+                f.write(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Command: {cmd_str}\n")
+                f.write(f"{'='*70}\n\n")
+                f.flush()
+
+                # Run command and capture output
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+
+                # Write output to log file
+                f.write(result.stdout)
+                f.write(f"\n{'='*70}\n")
+                f.write(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Return code: {result.returncode}\n")
+                f.write(f"{'='*70}\n")
+
+                # Also print to console
+                print(result.stdout)
+
+                if result.returncode != 0:
+                    raise subprocess.CalledProcessError(result.returncode, cmd)
+
+                return True
+        else:
+            result = subprocess.run(cmd, check=True, capture_output=False)
+            return result.returncode == 0
     except subprocess.CalledProcessError as e:
         print(f"ERROR: Command failed with return code {e.returncode}")
         return False
@@ -248,6 +291,110 @@ def collect_results(output_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(results).sort_values("experiment_id")
 
 
+def create_metrics_summary(
+    experiments: List[Dict],
+    exp_df: pd.DataFrame,
+    output_dir: Path,
+    summary_path: Path
+) -> None:
+    """
+    Create a comprehensive metrics summary CSV combining experiment config and results.
+
+    Parameters
+    ----------
+    experiments : List[Dict]
+        List of parsed experiment parameters
+    exp_df : pd.DataFrame
+        Original experiment configuration dataframe
+    output_dir : Path
+        Directory containing experiment results (models/experiments/)
+    summary_path : Path
+        Path to save the metrics summary CSV (experiment/metrics_summary.csv)
+    """
+    summary_data = []
+
+    for params in experiments:
+        exp_id = params["exp_id"]
+        exp_name = f"exp_{exp_id:03d}"
+
+        # Get original row from CSV
+        row = exp_df[exp_df["验证序号"] == exp_id].iloc[0]
+
+        # Read metrics from results
+        metrics_file = output_dir / f"{exp_name}_metrics.json"
+
+        metrics_dict = {
+            "验证序号": exp_id,
+            "验证目标": row["验证目标"],
+            "验证数据集": row["验证数据集"],
+            "验证模型": params["model"],
+            "数据划分方式": row["数据划分方式"],
+            "异常值剔除": row["异常值剔除"],
+            "特征模式": row["有无时间特征-日/周/月/年的整体变化趋势图"],
+            "时间窗口": row["时间窗口长度"],
+            "预测时长": row["预测时长"],
+        }
+
+        # Try to read metrics
+        if metrics_file.exists():
+            try:
+                with open(metrics_file) as f:
+                    metrics = json.load(f)
+
+                rmse = metrics.get("RMSE", None)
+                mse = metrics.get("MSE", None)
+                # Calculate MSE from RMSE if not present
+                if mse is None and rmse is not None:
+                    mse = rmse ** 2
+
+                metrics_dict.update({
+                    "RMSE": rmse,
+                    "MAE": metrics.get("MAE", None),
+                    "MSE": mse,
+                    "R2": metrics.get("R2", None),
+                    "训练时间(秒)": metrics.get("train_time", None),
+                    "状态": "success",
+                    "日志文件": f"logs/{exp_name}.log"
+                })
+            except Exception as e:
+                metrics_dict.update({
+                    "RMSE": None,
+                    "MAE": None,
+                    "MSE": None,
+                    "R2": None,
+                    "训练时间(秒)": None,
+                    "状态": f"error: {e}",
+                    "日志文件": f"logs/{exp_name}.log"
+                })
+        else:
+            metrics_dict.update({
+                "RMSE": None,
+                "MAE": None,
+                "MSE": None,
+                "R2": None,
+                "训练时间(秒)": None,
+                "状态": "not_run",
+                "日志文件": f"logs/{exp_name}.log"
+            })
+
+        summary_data.append(metrics_dict)
+
+    # Create DataFrame and save
+    summary_df = pd.DataFrame(summary_data)
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_df.to_csv(summary_path, index=False, encoding="utf-8-sig")
+
+    print(f"\nMetrics summary saved to: {summary_path}")
+    print(f"\nKey metrics for completed experiments:")
+
+    # Show only successful experiments
+    success_df = summary_df[summary_df["状态"] == "success"]
+    if not success_df.empty:
+        print("\n" + success_df[["验证序号", "验证模型", "RMSE", "MAE", "R2"]].to_string(index=False))
+    else:
+        print("  No successful experiments found.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Batch experiment runner"
@@ -261,7 +408,8 @@ def main() -> None:
     parser.add_argument(
         "--exp-ids",
         type=str,
-        help="Comma-separated list of experiment IDs to run (e.g., '1,2,3')"
+        default="10,28,46",
+        help="Comma-separated list of experiment IDs to run (default: '10,28,46')"
     )
     parser.add_argument(
         "--run-preprocessing",
@@ -290,13 +438,10 @@ def main() -> None:
     print(f"Loading experiment configuration from: {config_path}")
     exp_df = pd.read_csv(config_path)
 
-    # Filter experiments if specified
-    if args.exp_ids:
-        exp_ids = [int(x.strip()) for x in args.exp_ids.split(",")]
-        exp_df = exp_df[exp_df["验证序号"].isin(exp_ids)]
-        print(f"Running {len(exp_df)} experiments: {exp_ids}")
-    else:
-        print(f"Running all {len(exp_df)} experiments")
+    # Filter experiments (default to 10, 28, 46)
+    exp_ids = [int(x.strip()) for x in args.exp_ids.split(",")]
+    exp_df = exp_df[exp_df["验证序号"].isin(exp_ids)]
+    print(f"Running {len(exp_df)} experiments: {exp_ids}")
 
     # Parse all experiments
     experiments = []
@@ -343,6 +488,9 @@ def main() -> None:
     success_count = 0
     failed_experiments = []
 
+    # Get project root for log file paths
+    project_root = Path(__file__).resolve().parents[1]
+
     for i, params in enumerate(experiments, 1):
         print(f"\n{'='*70}")
         print(f"Experiment {i}/{len(experiments)}: ID={params['exp_id']}")
@@ -351,7 +499,12 @@ def main() -> None:
         print(f"{'='*70}")
 
         cmd = build_training_command(params)
-        success = run_command(cmd, args.dry_run)
+
+        # Create log file path for this experiment
+        exp_name = f"exp_{params['exp_id']:03d}"
+        log_file = project_root / "experiment" / "logs" / f"{exp_name}.log"
+
+        success = run_command(cmd, args.dry_run, log_file=log_file if not args.dry_run else None)
 
         if success:
             success_count += 1
@@ -386,6 +539,14 @@ def main() -> None:
             print(top5.to_string(index=False))
         else:
             print("\nNo results found to summarize.")
+
+        # Create comprehensive metrics summary in experiment folder
+        print("\n" + "="*70)
+        print("CREATING METRICS SUMMARY")
+        print("="*70)
+
+        metrics_summary_path = project_root / "experiment" / "metrics_summary.csv"
+        create_metrics_summary(experiments, exp_df, output_dir, metrics_summary_path)
 
     # Final summary
     print("\n" + "="*70)
