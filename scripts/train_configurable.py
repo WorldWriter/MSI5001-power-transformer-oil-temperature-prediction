@@ -42,7 +42,11 @@ from sklearn.model_selection import train_test_split
 
 from models.pytorch_mlp import PyTorchMLPRegressor
 from models.pytorch_rnn import PyTorchRNNRegressor
-from models.pytorch_informer import PyTorchInformerRegressor
+try:
+    from models.pytorch_informer import PyTorchInformerRegressor
+    INFORMER_AVAILABLE = True
+except ImportError:
+    INFORMER_AVAILABLE = False
 
 from .common import (
     CLEAN_DIR,
@@ -95,31 +99,26 @@ MODEL_BUILDERS = {
         device="auto",
     ),
     "Informer": lambda: PyTorchInformerRegressor(
-        # Sequence lengths (auto-adjusted in wrapper based on input)
-        seq_len=96,        # Lookback: 96 hours (4 days)
-        label_len=48,      # Decoder start: 48 hours (2 days)
-        pred_len=1,        # Predict: 1 step ahead (adjusted per task)
-        # Model architecture (balanced for production)
-        d_model=256,       # Embedding dimension (128=fast, 256=balanced, 512=best)
-        n_heads=8,         # Number of attention heads
-        e_layers=2,        # Encoder layers
-        d_layers=1,        # Decoder layers
-        d_ff=1024,         # Feedforward dimension (512=fast, 1024=balanced, 2048=best)
-        # Informer-specific
-        factor=5,          # ProbSparse attention factor
-        dropout=0.05,      # Dropout rate
-        attn='prob',       # Use ProbSparse attention (Informer's core innovation)
-        activation='gelu', # Activation function
-        # Training config
-        learning_rate_init=1e-4,  # Transformer standard learning rate
-        max_iter=30,       # Epochs (10=debug, 30=standard, 50-100=best)
-        batch_size=32,     # Batch size
+        seq_len=96,
+        label_len=48,
+        pred_len=24,
+        d_model=512,
+        n_heads=8,
+        e_layers=2,
+        d_layers=1,
+        d_ff=2048,
+        factor=5,
+        dropout=0.05,
+        attn='prob',
+        activation='gelu',
+        learning_rate_init=1e-4,
+        max_iter=10,
+        batch_size=32,
         random_state=42,
         early_stopping=True,
-        n_iter_no_change=5,
         verbose=False,
         device="auto",
-    ),
+    ) if INFORMER_AVAILABLE else None,
     "LinearRegression": lambda: LinearRegression(),
     "Ridge": lambda: Ridge(alpha=5.0, random_state=42),
 }
@@ -351,8 +350,9 @@ def main() -> None:
                        help="Data file suffix (e.g., '_1pct', '_no_outlier')")
 
     # Model configuration
+    available_models = [k for k, v in MODEL_BUILDERS.items() if v is not None]
     parser.add_argument("--model", type=str, required=True,
-                       choices=list(MODEL_BUILDERS.keys()),
+                       choices=available_models,
                        help="Model to train")
 
     # Data splitting configuration
@@ -431,47 +431,18 @@ def main() -> None:
     start_time = time.time()
 
     if args.split_method == "chronological":
-        # Chronological split - behavior depends on model type
+        # Simple chronological split (no sliding windows)
         print(f"\nSplitting data (chronological, {int(args.test_ratio*100)}% test)...")
+        train_df, test_df = chronological_split(df, train_ratio=1-args.test_ratio)
 
-        # Check if model requires 3D sequential data (RNN, Informer, etc.)
-        is_sequence_model = args.model in ["RNN", "Informer"]
+        X_train = train_df[feature_cols].to_numpy(dtype=np.float32)
+        y_train = train_df[TARGET_COL].to_numpy(dtype=np.float32)
+        X_test = test_df[feature_cols].to_numpy(dtype=np.float32)
+        y_test = test_df[TARGET_COL].to_numpy(dtype=np.float32)
+        ts_test = test_df["date"].to_numpy()
 
-        if is_sequence_model:
-            # For sequence models: create windows THEN split chronologically
-            # This matches Informer paper's approach: train on first N months, test on last M months
-            window_config = create_window_config(
-                horizon=args.horizon,
-                lookback_multiplier=args.lookback_multiplier,
-                gap=args.gap
-            )
-            print(f"Window config: {window_config}")
-            print(f"Creating sliding windows for {args.model} (keeping sequence structure)...")
-            X, y, timestamps = create_sliding_windows_for_rnn(df, feature_cols, window_config)
-            print(f"  Created {len(X)} windows (shape: {X.shape})")
-
-            # Split windows chronologically (by timestamp)
-            cutoff_idx = int(len(X) * (1 - args.test_ratio))
-            X_train = X[:cutoff_idx]
-            y_train = y[:cutoff_idx]
-            X_test = X[cutoff_idx:]
-            y_test = y[cutoff_idx:]
-            ts_test = timestamps[cutoff_idx:]
-
-            print(f"  Train: {len(X_train)} windows")
-            print(f"  Test:  {len(X_test)} windows")
-        else:
-            # For non-sequence models: simple split without windows
-            train_df, test_df = chronological_split(df, train_ratio=1-args.test_ratio)
-
-            X_train = train_df[feature_cols].to_numpy(dtype=np.float32)
-            y_train = train_df[TARGET_COL].to_numpy(dtype=np.float32)
-            X_test = test_df[feature_cols].to_numpy(dtype=np.float32)
-            y_test = test_df[TARGET_COL].to_numpy(dtype=np.float32)
-            ts_test = test_df["date"].to_numpy()
-
-            print(f"  Train: {len(X_train)} samples")
-            print(f"  Test:  {len(X_test)} samples")
+        print(f"  Train: {len(X_train)} samples")
+        print(f"  Test:  {len(X_test)} samples")
 
     elif args.split_method in ["random_window", "group_random"]:
         # Create sliding windows first
@@ -482,7 +453,7 @@ def main() -> None:
         )
         print(f"\nWindow config: {window_config}")
 
-        # Check if model requires 3D sequential data (RNN, Informer, etc.)
+        # Check if model is RNN or Informer (requires 3D sequential data)
         is_sequence_model = args.model in ["RNN", "Informer"]
 
         if is_sequence_model:
@@ -542,7 +513,10 @@ def main() -> None:
 
     # Train model
     print(f"\nTraining {args.model}...")
-    model = MODEL_BUILDERS[args.model]()
+    model_builder = MODEL_BUILDERS[args.model]
+    if model_builder is None:
+        raise ValueError(f"Model '{args.model}' is not available. Informer may not be properly installed.")
+    model = model_builder()
     model.fit(X_train, y_train)
     train_time = time.time() - start_time
     print(f"  Training time: {train_time:.2f}s")

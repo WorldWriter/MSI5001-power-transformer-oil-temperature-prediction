@@ -1,14 +1,14 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-30 21:26:47
-Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RNN --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_064
+Started: 2025-10-30 23:56:24
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model Informer --split-method random_window --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_064
 ======================================================================
 
 ======================================================================
 Experiment: exp_064
 ======================================================================
 Transformer:     TX1
-Model:           RNN
+Model:           Informer
 Split method:    random_window
 Feature mode:    full
 Data suffix:     (default)
@@ -19,21 +19,22 @@ Loading data...
   Features: 21 columns
 
 Window config: WindowConfig(horizon=1, lookback=4, gap=0)
-Creating sliding windows for RNN (keeping sequence structure)...
+Creating sliding windows for Informer (keeping sequence structure)...
   Created 65557 windows (shape: (65557, 4, 21))
   Sampling 40000 windows...
 Splitting windows (random, 20% test)...
   Train: 32000 windows
   Test:  8000 windows
 
-Training RNN...
+Training Informer...
 Using GPU: NVIDIA GeForce RTX 4070 Ti SUPER
-  Training time: 62.18s
+Warning: Input sequence length (4) is smaller than configured seq_len (96). Adjusting seq_len to 4.
+  Training time: 124.95s
 
 Evaluating...
-  RMSE: 3.5111
-  MAE:  2.5997
-  R2:   0.7875
+  RMSE: 4.5182
+  MAE:  3.4688
+  R2:   0.6481
 
 Saving results...
   Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_064_model.joblib
@@ -47,6 +48,6 @@ Experiment complete: exp_064
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-30 21:27:54
+Completed: 2025-10-30 23:58:33
 Return code: 0
 ======================================================================
