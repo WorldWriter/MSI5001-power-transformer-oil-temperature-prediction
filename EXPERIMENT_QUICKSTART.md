@@ -54,20 +54,26 @@ python -m scripts.run_experiments \\
 ### 步骤4：运行批量实验
 
 ```bash
-# 运行默认实验 (10, 28, 46)
-python -m scripts.run_experiments \\
+# 运行默认实验 (10, 28, 46) - 推荐使用无缓冲模式查看实时输出
+python -u -m scripts.run_experiments \\
     --config experiment/experiment_group.csv
 
-# 运行指定实验
-python -m scripts.run_experiments \\
+# 运行指定实验（如 Informer SOTA 实验）
+python -u -m scripts.run_experiments \\
     --config experiment/experiment_group.csv \\
-    --exp-ids 1,2,3
+    --exp-ids 64,65,66
 
 # 或运行所有实验（约需 2-4 小时）
-python -m scripts.run_experiments \\
+python -u -m scripts.run_experiments \\
     --config experiment/experiment_group.csv \\
     --exp-ids 1,2,3,4,5,6,7,8,9,10 \\
     --run-preprocessing
+```
+
+**Windows用户**：在PowerShell中使用
+```powershell
+$env:PYTHONUNBUFFERED=1
+python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 64,65,66
 ```
 
 ### 步骤5：查看实验结果
@@ -111,6 +117,9 @@ python -m scripts.train_configurable --tx-id 1 --model MLP --split-method random
 # 滑动窗口 + RNN（新增！适合时序建模）
 python -m scripts.train_configurable --tx-id 1 --model RNN --split-method random_window
 
+# 滑动窗口 + Informer（新增！SOTA时序预测模型）
+python -m scripts.train_configurable --tx-id 1 --model Informer --split-method random_window
+
 # 使用特定预处理数据
 python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method random_window --data-suffix "_1pct"
 ```
@@ -118,17 +127,17 @@ python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-meth
 ### 批量运行实验
 
 ```bash
-# 运行默认实验 (10, 28, 46) - 推荐用于快速测试
-python -m scripts.run_experiments --config experiment/experiment_group.csv
+# 运行默认实验 (10, 28, 46) - 推荐用于快速测试（使用 -u 查看实时输出）
+python -u -m scripts.run_experiments --config experiment/experiment_group.csv
 
-# 运行指定实验
-python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 1,2,3,4,5
+# 运行指定实验（如 Informer SOTA 实验 64-69）
+python -u -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 64,65,66,67,68,69
 
 # 预览命令（不执行）
 python -m scripts.run_experiments --config experiment/experiment_group.csv --dry-run
 
 # 运行所有实验
-python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 1,2,3,...,45
+python -u -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 1,2,3,...,69
 ```
 
 ---
@@ -194,8 +203,35 @@ cd /path/to/MSI5001-power-transformer-oil-temperature-prediction
 ```bash
 Using CPU (no GPU available)
 ```
-**影响**：MLP 训练会较慢（但仍可正常运行）
+**影响**：MLP/RNN/Informer 训练会较慢（但仍可正常运行）
 **解决**：安装 PyTorch GPU 版本（可选）
+- **NVIDIA GPU (Windows/Linux)**: 支持 CUDA (如 RTX 4070ti Super)
+- **Apple Silicon (macOS)**: 支持 MPS (如 M1/M2/M3)
+
+### 问题：实验看起来卡住，没有输出
+```bash
+# 运行命令后长时间没有输出
+python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 64
+```
+**原因**：Python 输出缓冲（所有平台通用问题：Windows/Linux/macOS）
+**解决方案 1 - 使用无缓冲模式（推荐）**：
+```bash
+# macOS/Linux
+python -u -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 64
+
+# Windows PowerShell
+$env:PYTHONUNBUFFERED=1
+python -m scripts.run_experiments --config experiment/experiment_group.csv --exp-ids 64
+```
+
+**解决方案 2 - 实时查看日志**：
+```bash
+# 在另一个终端查看日志（macOS/Linux）
+tail -f experiment/logs/exp_064.log
+
+# Windows PowerShell
+Get-Content experiment/logs/exp_064.log -Wait
+```
 
 ---
 
