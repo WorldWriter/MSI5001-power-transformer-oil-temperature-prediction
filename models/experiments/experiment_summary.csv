@@ -1,0 +1,2 @@
+experiment_id,transformer_id,model,split_method,feature_mode,data_suffix,test_ratio,n_features,n_train,n_test,train_time,RMSE,MAE,R2,lookback,horizon,gap,lookback_multiplier
+exp_010,1,RandomForest,random_window,full,,0.2,21,32000,8000,8.038622856140137,2.0009532938980734,1.3414750059243332,0.9309770834488792,4,1,0,4.0

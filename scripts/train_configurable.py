@@ -41,6 +41,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 from models.pytorch_mlp import PyTorchMLPRegressor
+from models.pytorch_rnn import PyTorchRNNRegressor
 
 from .common import (
     CLEAN_DIR,
@@ -74,6 +75,19 @@ MODEL_BUILDERS = {
         alpha=1e-4,
         max_iter=120,
         batch_size=64,
+        random_state=42,
+        early_stopping=True,
+        verbose=False,
+        device="auto",
+    ),
+    "RNN": lambda: PyTorchRNNRegressor(
+        hidden_size=64,
+        num_layers=2,
+        dropout=0.2,
+        bidirectional=False,
+        learning_rate_init=1e-3,
+        max_iter=120,
+        batch_size=32,
         random_state=42,
         early_stopping=True,
         verbose=False,
@@ -174,6 +188,65 @@ def create_sliding_windows(
         y_list.append(targets[target_idx])
         ts_list.append(timestamps[target_idx])
 
+    return np.array(X_list), np.array(y_list), np.array(ts_list)
+
+
+def create_sliding_windows_for_rnn(
+    df: pd.DataFrame,
+    feature_cols: List[str],
+    window_config: WindowConfig,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Create sliding windows for RNN models (keeps sequence structure).
+
+    This function is similar to create_sliding_windows() but does NOT flatten
+    the window, keeping the sequence structure required by RNN models.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    feature_cols : List[str]
+        Feature column names
+    window_config : WindowConfig
+        Window configuration
+
+    Returns
+    -------
+    X : np.ndarray
+        Windowed features (shape: [n_windows, lookback, n_features])
+        Note: NOT flattened, keeps sequence structure for RNN
+    y : np.ndarray
+        Target values (shape: [n_windows])
+    timestamps : np.ndarray
+        Timestamps for each window
+    """
+    values = df[feature_cols].to_numpy(dtype=np.float32)
+    targets = df[TARGET_COL].to_numpy(dtype=np.float32)
+    timestamps = df["date"].to_numpy()
+
+    X_list: List[np.ndarray] = []
+    y_list: List[float] = []
+    ts_list: List[np.datetime64] = []
+
+    lookback = window_config.lookback
+    horizon = window_config.horizon
+    gap = window_config.gap
+
+    for target_idx in range(lookback + gap + horizon, len(df)):
+        window_end = target_idx - horizon - gap
+        window_start = window_end - lookback
+
+        if window_start < 0:
+            continue
+
+        # Keep sequence structure (DO NOT flatten for RNN)
+        window = values[window_start:window_end]  # shape: (lookback, n_features)
+        X_list.append(window)
+        y_list.append(targets[target_idx])
+        ts_list.append(timestamps[target_idx])
+
+    # Return 3D array for RNN: (n_windows, lookback, n_features)
     return np.array(X_list), np.array(y_list), np.array(ts_list)
 
 
@@ -353,9 +426,17 @@ def main() -> None:
         )
         print(f"\nWindow config: {window_config}")
 
-        print(f"Creating sliding windows...")
-        X, y, timestamps = create_sliding_windows(df, feature_cols, window_config)
-        print(f"  Created {len(X)} windows")
+        # Check if model is RNN (requires 3D sequential data)
+        is_rnn_model = args.model == "RNN"
+
+        if is_rnn_model:
+            print(f"Creating sliding windows for RNN (keeping sequence structure)...")
+            X, y, timestamps = create_sliding_windows_for_rnn(df, feature_cols, window_config)
+            print(f"  Created {len(X)} windows (shape: {X.shape})")
+        else:
+            print(f"Creating sliding windows...")
+            X, y, timestamps = create_sliding_windows(df, feature_cols, window_config)
+            print(f"  Created {len(X)} windows")
 
         # Limit windows if specified
         if args.max_windows and len(X) > args.max_windows:
@@ -417,7 +498,7 @@ def main() -> None:
 
     print(f"  RMSE: {metrics['RMSE']:.4f}")
     print(f"  MAE:  {metrics['MAE']:.4f}")
-    print(f"  R²:   {metrics['R2']:.4f}")
+    print(f"  R2:   {metrics['R2']:.4f}")
 
     # Save results
     print(f"\nSaving results...")

@@ -133,7 +133,25 @@ python -m scripts.preprocessing_configurable \\
 
 | 参数 | 选项 | 说明 |
 |------|------|------|
-| `--model` | RandomForest, MLP, LinearRegression, Ridge | 模型类型（必需） |
+| `--model` | RandomForest, MLP, RNN, LinearRegression, Ridge | 模型类型（必需） |
+
+**模型特性对比**：
+
+| 模型 | 类型 | GPU加速 | 时序建模 | 适用场景 |
+|------|------|---------|---------|---------|
+| **RandomForest** | 树模型 | ❌ | ❌ | 非线性关系、特征重要性分析 |
+| **LinearRegression** | 线性模型 | ❌ | ❌ | 线性关系基准 |
+| **Ridge** | 线性模型 | ❌ | ❌ | 带正则化的线性关系 |
+| **MLP** | 深度学习 | ✅ | ❌ | 复杂非线性关系 |
+| **RNN** 🆕 | 深度学习 | ✅ | ✅ | 时间序列依赖关系 |
+
+**RNN 特点**：
+- ✅ 原生支持序列数据（保持时间步结构）
+- ✅ 捕捉时间依赖关系
+- ✅ 支持双向 RNN
+- ✅ 自动 GPU 加速（CUDA/MPS）
+- ⚠️ 训练速度较 MLP 稍慢
+- ⚠️ 仅支持滑动窗口划分（random_window/group_random）
 
 #### 数据划分配置
 
@@ -196,6 +214,15 @@ python -m scripts.train_configurable \\
     --model RandomForest \\
     --split-method random_window \\
     --data-suffix "_1pct"
+
+# 🆕 使用 RNN 进行时序建模（GPU 加速）
+python -m scripts.train_configurable \\
+    --tx-id 1 \\
+    --model RNN \\
+    --split-method random_window \\
+    --feature-mode full \\
+    --lookback-multiplier 4 \\
+    --horizon 1
 ```
 
 ---
