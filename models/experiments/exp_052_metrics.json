@@ -1,0 +1,20 @@
+{
+  "experiment_id": "exp_052",
+  "transformer_id": 1,
+  "model": "RNN",
+  "split_method": "random_window",
+  "feature_mode": "full",
+  "data_suffix": "",
+  "test_ratio": 0.2,
+  "n_features": 21,
+  "n_train": 32000,
+  "n_test": 8000,
+  "train_time": 45.627984285354614,
+  "RMSE": 4.153303623199463,
+  "MAE": 3.2899258136749268,
+  "R2": 0.6956868171691895,
+  "lookback": 336,
+  "horizon": 168,
+  "gap": 0,
+  "lookback_multiplier": 2.0
+}

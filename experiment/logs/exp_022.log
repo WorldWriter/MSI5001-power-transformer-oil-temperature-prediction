@@ -1,0 +1,50 @@
+======================================================================
+Experiment Log
+Started: 2025-10-30 20:18:08
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model RandomForest --split-method random_window --feature-mode full --lookback-multiplier 2.0 --horizon 24 --experiment-name exp_022
+======================================================================
+
+======================================================================
+Experiment: exp_022
+======================================================================
+Transformer:     TX2
+Model:           RandomForest
+Split method:    random_window
+Feature mode:    full
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 66919
+  Features: 17 columns
+
+Window config: WindowConfig(horizon=24, lookback=48, gap=0)
+Creating sliding windows...
+  Created 66847 windows
+  Sampling 40000 windows...
+Splitting windows (random, 20% test)...
+  Train: 32000 windows
+  Test:  8000 windows
+
+Training RandomForest...
+  Training time: 46.51s
+
+Evaluating...
+  RMSE: 2.1641
+  MAE:  1.5295
+  R2:   0.9660
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_022_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_022_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_022_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_022_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_022_scatter.png
+
+======================================================================
+Experiment complete: exp_022
+======================================================================
+
+======================================================================
+Completed: 2025-10-30 20:18:59
+Return code: 0
+======================================================================

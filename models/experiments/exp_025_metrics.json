@@ -1,0 +1,20 @@
+{
+  "experiment_id": "exp_025",
+  "transformer_id": 2,
+  "model": "RandomForest",
+  "split_method": "random_window",
+  "feature_mode": "full",
+  "data_suffix": "",
+  "test_ratio": 0.2,
+  "n_features": 17,
+  "n_train": 32000,
+  "n_test": 8000,
+  "train_time": 360.4543306827545,
+  "RMSE": 2.334523978177137,
+  "MAE": 1.7120170324073096,
+  "R2": 0.9613384086970611,
+  "lookback": 336,
+  "horizon": 168,
+  "gap": 0,
+  "lookback_multiplier": 2.0
+}

@@ -1,0 +1,20 @@
+{
+  "experiment_id": "exp_035",
+  "transformer_id": 1,
+  "model": "MLP",
+  "split_method": "random_window",
+  "feature_mode": "full",
+  "data_suffix": "",
+  "test_ratio": 0.2,
+  "n_features": 21,
+  "n_train": 32000,
+  "n_test": 8000,
+  "train_time": 62.83345150947571,
+  "RMSE": 2.092391014099121,
+  "MAE": 1.5610724687576294,
+  "R2": 0.9213734269142151,
+  "lookback": 672,
+  "horizon": 168,
+  "gap": 0,
+  "lookback_multiplier": 4.0
+}
