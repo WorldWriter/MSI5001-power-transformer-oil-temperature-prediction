@@ -52,8 +52,11 @@ class Dataset_ETT_hour(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
-        if self.features=='M' or self.features=='MS':
+        if self.features=='M':
             cols_data = df_raw.columns[1:]
+            df_data = df_raw[cols_data]
+        elif self.features=='MS':
+            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
             df_data = df_raw[cols_data]
         elif self.features=='S':
             df_data = df_raw[[self.target]]
@@ -138,8 +141,11 @@ class Dataset_ETT_minute(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
-        if self.features=='M' or self.features=='MS':
+        if self.features=='M':
             cols_data = df_raw.columns[1:]
+            df_data = df_raw[cols_data]
+        elif self.features=='MS':
+            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
             df_data = df_raw[cols_data]
         elif self.features=='S':
             df_data = df_raw[[self.target]]
@@ -238,8 +244,11 @@ class Dataset_Custom(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
         
-        if self.features=='M' or self.features=='MS':
+        if self.features=='M':
             cols_data = df_raw.columns[1:]
+            df_data = df_raw[cols_data]
+        elif self.features=='MS':
+            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
             df_data = df_raw[cols_data]
         elif self.features=='S':
             df_data = df_raw[[self.target]]
@@ -329,8 +338,11 @@ class Dataset_Pred(Dataset):
         border1 = len(df_raw)-self.seq_len
         border2 = len(df_raw)
         
-        if self.features=='M' or self.features=='MS':
+        if self.features=='M':
             cols_data = df_raw.columns[1:]
+            df_data = df_raw[cols_data]
+        elif self.features=='MS':
+            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
             df_data = df_raw[cols_data]
         elif self.features=='S':
             df_data = df_raw[[self.target]]

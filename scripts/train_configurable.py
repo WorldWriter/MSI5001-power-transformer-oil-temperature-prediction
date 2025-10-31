@@ -433,8 +433,8 @@ def train_informer_native(
         "--seq_len", str(seq_len),
         "--label_len", str(label_len),
         "--pred_len", str(pred_len),
-        "--enc_in", "7",  # 7 input features (HUFL, HULL, MUFL, MULL, LUFL, LULL, OT)
-        "--dec_in", "7",
+        "--enc_in", "6",  # 6 input features (HUFL, HULL, MUFL, MULL, LUFL, LULL) - OT excluded
+        "--dec_in", "6",
         "--c_out", "1",  # Single output (OT)
         "--d_model", str(d_model),
         "--n_heads", "8",
@@ -503,25 +503,29 @@ def train_informer_native(
         # Parse metrics from output
         output_text = result.stdout
 
-        # Look for test metrics in output (Informer prints: "mse:X.XX, mae:Y.YY")
+        # Look for test metrics in output (Informer prints: "mse:X.XX, mae:Y.YY, r2:Z.ZZ")
         mse_match = re.search(r'mse:\s*([\d.]+)', output_text, re.IGNORECASE)
         mae_match = re.search(r'mae:\s*([\d.]+)', output_text, re.IGNORECASE)
+        r2_match = re.search(r'r2:\s*([-\d.]+)', output_text, re.IGNORECASE)
 
         if mse_match and mae_match:
             mse = float(mse_match.group(1))
             mae = float(mae_match.group(1))
             rmse = np.sqrt(mse)
+            r2 = float(r2_match.group(1)) if r2_match else None
 
             print(f"\nParsed metrics from Informer output:")
             print(f"  MSE:  {mse:.4f}")
             print(f"  MAE:  {mae:.4f}")
             print(f"  RMSE: {rmse:.4f}")
+            if r2 is not None:
+                print(f"  R2:   {r2:.4f}")
 
             return {
                 "RMSE": float(rmse),
                 "MAE": float(mae),
                 "MSE": float(mse),
-                "R2": None,  # Informer doesn't output R2
+                "R2": r2,
                 "train_time": train_time,
             }
         else:
