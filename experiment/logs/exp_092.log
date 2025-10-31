@@ -1,0 +1,97 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 13:49:31
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model Informer --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_092
+======================================================================
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\scripts\train_configurable.py", line 687, in <module>
+    main()
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\scripts\train_configurable.py", line 615, in main
+    y_pred = model.predict(X_test)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\pytorch_informer.py", line 532, in predict
+    predictions = self.model_(x_enc, x_mark_enc, x_dec, x_mark_dec)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\model.py", line 70, in forward
+    enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\encoder.py", line 68, in forward
+    x, attn = attn_layer(x, attn_mask=attn_mask)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\encoder.py", line 44, in forward
+    new_x, attn = self.attention(
+                  ^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\attn.py", line 153, in forward
+    out, attn = self.inner_attention(
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\attn.py", line 114, in forward
+    scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u) 
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\informer_arch\attn.py", line 55, in _prob_QK
+    K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
+               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 29.96 GiB. GPU 
+======================================================================
+Experiment: exp_092
+======================================================================
+Transformer:     TX1
+Model:           Informer
+Split method:    chronological
+Feature mode:    full_6loads
+Data suffix:     (default)
+
+Loading data...
+  Total samples: 65562
+  Added TX1 dynamic features
+  Features: 25 columns
+
+Window config: WindowConfig(horizon=24, lookback=96, gap=0)
+Creating sliding windows for Informer (keeping sequence structure)...
+  Created 65442 windows (shape: (65442, 96, 25))
+Splitting windows (chronological, 20% test)...
+  Train: 52353 windows
+  Test:  13089 windows
+
+Training Informer...
+Using GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+  Training time: 1624.84s
+
+Evaluating...
+
+======================================================================
+Completed: 2025-10-31 14:16:41
+Return code: 1
+======================================================================

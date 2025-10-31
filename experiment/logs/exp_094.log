@@ -1,0 +1,11 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 12:41:55
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model Informer-Short --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_094
+======================================================================
+
+
+======================================================================
+Completed: 2025-10-31 12:45:36
+Return code: 4294967295
+======================================================================

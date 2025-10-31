@@ -1,0 +1,48 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 15:19:39
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model MLP --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_079 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_079
+======================================================================
+Transformer:     TX1
+Model:           MLP
+Split method:    chronological
+Feature mode:    full_6loads
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Added TX1 dynamic features
+  Features: 25 columns
+
+Splitting data (chronological, 20% test)...
+  Train: 55744 samples
+  Test:  13936 samples
+
+Training MLP...
+Using GPU: NVIDIA GeForce RTX 4070 Ti SUPER
+  Training time: 95.39s
+
+Evaluating...
+  RMSE: 8.5370
+  MAE:  7.2829
+  R2:   -5.1335
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_079_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_079_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_079_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_079_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_079_scatter.png
+
+======================================================================
+Experiment complete: exp_079
+======================================================================
+
+======================================================================
+Completed: 2025-10-31 15:21:19
+Return code: 0
+======================================================================

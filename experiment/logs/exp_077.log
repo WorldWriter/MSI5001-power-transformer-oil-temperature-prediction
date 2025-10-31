@@ -1,0 +1,46 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 15:18:21
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model RandomForest --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_077 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_077
+======================================================================
+Transformer:     TX2
+Model:           RandomForest
+Split method:    chronological
+Feature mode:    full_6loads
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Features: 21 columns
+
+Splitting data (chronological, 20% test)...
+  Train: 55744 samples
+  Test:  13936 samples
+
+Training RandomForest...
+  Training time: 2.49s
+
+Evaluating...
+  RMSE: 6.0341
+  MAE:  4.8210
+  R2:   0.6820
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_077_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_077_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_077_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_077_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_077_scatter.png
+
+======================================================================
+Experiment complete: exp_077
+======================================================================
+
+======================================================================
+Completed: 2025-10-31 15:18:28
+Return code: 0
+======================================================================
