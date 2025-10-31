@@ -1,6 +1,6 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-31 15:17:53
+Started: 2025-10-31 20:02:19
 Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_073 --data-suffix _no_outlier
 ======================================================================
 
@@ -18,17 +18,20 @@ Loading data...
   Added TX1 dynamic features
   Features: 25 columns
 
-Splitting data (chronological, 20% test)...
-  Train: 55744 samples
-  Test:  13936 samples
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 69675 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55740 windows
+  Test:  13935 windows
 
 Training RandomForest...
-  Training time: 3.59s
+  Training time: 14.72s
 
 Evaluating...
-  RMSE: 7.8516
-  MAE:  6.8336
-  R2:   -4.1881
+  RMSE: 7.9800
+  MAE:  6.9886
+  R2:   -4.3593
 
 Saving results...
   Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_073_model.joblib
@@ -42,6 +45,6 @@ Experiment complete: exp_073
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-31 15:18:00
+Completed: 2025-10-31 20:02:37
 Return code: 0
 ======================================================================

@@ -1,6 +1,6 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-31 15:21:19
+Started: 2025-10-31 19:55:24
 Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model MLP --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_080 --data-suffix _no_outlier
 ======================================================================
 
@@ -18,18 +18,21 @@ Loading data...
   Added TX1 dynamic features
   Features: 25 columns
 
-Splitting data (chronological, 20% test)...
-  Train: 55744 samples
-  Test:  13936 samples
+Window config: WindowConfig(horizon=24, lookback=96, gap=0)
+Creating sliding windows...
+  Created 69560 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55648 windows
+  Test:  13912 windows
 
 Training MLP...
 Using GPU: NVIDIA GeForce RTX 4070 Ti SUPER
-  Training time: 94.38s
+  Training time: 63.21s
 
 Evaluating...
-  RMSE: 8.5370
-  MAE:  7.2829
-  R2:   -5.1335
+  RMSE: 7.7199
+  MAE:  6.5182
+  R2:   -4.0192
 
 Saving results...
   Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_080_model.joblib
@@ -43,6 +46,6 @@ Experiment complete: exp_080
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-31 15:22:58
+Completed: 2025-10-31 19:56:31
 Return code: 0
 ======================================================================

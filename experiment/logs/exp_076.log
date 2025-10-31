@@ -1,6 +1,6 @@
 ======================================================================
 Experiment Log
-Started: 2025-10-31 15:18:15
+Started: 2025-10-31 20:53:25
 Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model RandomForest --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_076 --data-suffix _no_outlier
 ======================================================================
 
@@ -17,17 +17,20 @@ Loading data...
   Total samples: 69680
   Features: 21 columns
 
-Splitting data (chronological, 20% test)...
-  Train: 55744 samples
-  Test:  13936 samples
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 69675 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55740 windows
+  Test:  13935 windows
 
 Training RandomForest...
-  Training time: 2.44s
+  Training time: 10.98s
 
 Evaluating...
-  RMSE: 6.0341
-  MAE:  4.8210
-  R2:   0.6820
+  RMSE: 5.9505
+  MAE:  4.7694
+  R2:   0.6907
 
 Saving results...
   Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_076_model.joblib
@@ -41,6 +44,6 @@ Experiment complete: exp_076
 ======================================================================
 
 ======================================================================
-Completed: 2025-10-31 15:18:21
+Completed: 2025-10-31 20:53:41
 Return code: 0
 ======================================================================
