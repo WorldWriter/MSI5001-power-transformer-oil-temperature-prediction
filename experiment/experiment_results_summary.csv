@@ -14,7 +14,7 @@
 13,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 day,191.26,success,exp_013,32000.0,8000.0,,0.9599,1.0775,1.5239,logs/exp_013.log
 14,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 day,190.21,success,exp_014,32000.0,8000.0,,0.9599,1.0775,1.5239,logs/exp_014.log
 15,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 day,193.74,success,exp_015,32000.0,8000.0,,0.9599,1.0775,1.5239,logs/exp_015.log
-16,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 week,,unknown,exp_016,,,,,,,logs/exp_016.log
+16,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 week,634.41,success,exp_016,32000.0,8000.0,,0.9688,0.9513,1.3291,logs/exp_016.log
 17,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 week,1287.39,success,exp_017,32000.0,8000.0,,0.9767,0.8282,1.1383,logs/exp_017.log
 18,目标4: RandomForest最优的时间窗口,TX1,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 week,1989.3,success,exp_018,32000.0,8000.0,,0.9816,0.7248,0.9873,logs/exp_018.log
 19,目标4: RandomForest最优的时间窗口,TX2,RandomForest,"滑动窗口随机: 形成滑动窗口数据对, 随机80%训练, 20%测试",默认-IQR,1 hour,2.02,success,exp_019,32000.0,8000.0,,0.9693,1.481,2.0924,logs/exp_019.log
@@ -89,10 +89,10 @@
 88,目标9: 时序分割的模型表现对比,TX2,RNN,"时序分割: 前80%训练, 后20%测试",无,1 hour,115.48,success,exp_088,55740.0,13935.0,,0.4234,6.3804,8.1251,logs/exp_088.log
 89,目标9: 时序分割的模型表现对比,TX2,RNN,"时序分割: 前80%训练, 后20%测试",无,1 day,89.32,success,exp_089,55648.0,13912.0,,0.6263,5.1642,6.5335,logs/exp_089.log
 90,目标9: 时序分割的模型表现对比,TX2,RNN,"时序分割: 前80%训练, 后20%测试",无,1 week,88.99,success,exp_090,55072.0,13768.0,,0.6785,4.8626,5.9948,logs/exp_090.log
+91,目标9: 时序分割的模型表现对比,TX1,Informer-Short,"时序分割: 前80%训练, 后20%测试",无,1 hour,213.85,success,exp_091,55740.0,13935.0,,0.8791,0.1248,0.2024,logs/exp_091.log
 91,目标9: 时序分割的模型表现对比,TX1,Informer-Short,"时序分割: 前80%训练, 后20%测试",无,1 hour,,unknown,exp_091,,,,,,,logs/exp_091.log
-91,目标9: 时序分割的模型表现对比,TX1,Informer-Short,"时序分割: 前80%训练, 后20%测试",无,1 hour,,unknown,exp_091,,,,,,,logs/exp_091.log
-92,目标9: 时序分割的模型表现对比,TX1,Informer,"时序分割: 前80%训练, 后20%测试",无,1 day,1624.84,failed,exp_092,52353.0,13089.0,,,,,logs/exp_092.log
+92,目标9: 时序分割的模型表现对比,TX1,Informer,"时序分割: 前80%训练, 后20%测试",无,1 day,172.15,success,exp_092,55648.0,13912.0,,0.5372,0.2914,0.396,logs/exp_092.log
 93,目标9: 时序分割的模型表现对比,TX1,Informer-Long,"时序分割: 前80%训练, 后20%测试",无,1 week,,unknown,exp_093,,,,,,,logs/exp_093.log
-94,目标9: 时序分割的模型表现对比,TX2,Informer-Short,"时序分割: 前80%训练, 后20%测试",无,1 hour,,unknown,exp_094,,,,,,,logs/exp_094.log
-95,目标9: 时序分割的模型表现对比,TX2,Informer,"时序分割: 前80%训练, 后20%测试",无,1 day,,unknown,exp_095,,,,,,,logs/exp_095.log
+94,目标9: 时序分割的模型表现对比,TX2,Informer-Short,"时序分割: 前80%训练, 后20%测试",无,1 hour,213.94,success,exp_094,55740.0,13935.0,,0.7366,0.0429,0.057,logs/exp_094.log
+95,目标9: 时序分割的模型表现对比,TX2,Informer,"时序分割: 前80%训练, 后20%测试",无,1 day,343.14,success,exp_095,55648.0,13912.0,,0.4472,0.0649,0.0825,logs/exp_095.log
 96,目标9: 时序分割的模型表现对比,TX2,Informer-Long,"时序分割: 前80%训练, 后20%测试",无,1 week,,unknown,exp_096,,,,,,,logs/exp_096.log

@@ -452,6 +452,7 @@ def train_informer_native(
         "--learning_rate", "0.0001",
         "--des", exp_id,
         "--itr", "1",  # Run once
+        "--inverse",   # Enable inverse transformation to original scale
     ]
 
     print(f"\nCalling native Informer from: {informer_dir}")
