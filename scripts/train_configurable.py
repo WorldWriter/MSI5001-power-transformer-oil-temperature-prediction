@@ -60,7 +60,6 @@ from .common import (
     add_time_features,
 )
 from .experiment_utils import (
-    chronological_split,
     group_random_split,
     select_features_by_mode,
     WindowConfig,
@@ -735,18 +734,28 @@ def main() -> None:
             print(f"  Train: {len(X_train)} windows")
             print(f"  Test:  {len(X_test)} windows")
         else:
-            # For non-sequence models: simple chronological split
-            print(f"\nSplitting data (chronological, {int(args.test_ratio*100)}% test)...")
-            train_df, test_df = chronological_split(df, train_ratio=1-args.test_ratio)
+            # For non-sequence models: create windows first, then split chronologically
+            window_config = create_window_config(
+                horizon=args.horizon,
+                lookback_multiplier=args.lookback_multiplier,
+                gap=args.gap
+            )
+            print(f"\nWindow config: {window_config}")
+            print(f"Creating sliding windows...")
+            X, y, timestamps = create_sliding_windows(df, feature_cols, window_config)
+            print(f"  Created {len(X)} windows")
 
-            X_train = train_df[feature_cols].to_numpy(dtype=np.float32)
-            y_train = train_df[TARGET_COL].to_numpy(dtype=np.float32)
-            X_test = test_df[feature_cols].to_numpy(dtype=np.float32)
-            y_test = test_df[TARGET_COL].to_numpy(dtype=np.float32)
-            ts_test = test_df["date"].to_numpy()
+            # Split windows chronologically
+            print(f"Splitting windows (chronological, {int(args.test_ratio*100)}% test)...")
+            cutoff_idx = int(len(X) * (1 - args.test_ratio))
+            X_train = X[:cutoff_idx]
+            y_train = y[:cutoff_idx]
+            X_test = X[cutoff_idx:]
+            y_test = y[cutoff_idx:]
+            ts_test = timestamps[cutoff_idx:]
 
-            print(f"  Train: {len(X_train)} samples")
-            print(f"  Test:  {len(X_test)} samples")
+            print(f"  Train: {len(X_train)} windows")
+            print(f"  Test:  {len(X_test)} windows")
 
     elif args.split_method in ["random_window", "group_random"]:
         # Create sliding windows first

@@ -211,17 +211,12 @@ def create_summary_table(logs_dir, config_df):
 def main():
     """Main function."""
     
-    # 导入platform模块以检测操作系统
-    import platform
-    
-    # 简化的操作系统路径判断
-    system = platform.system()
-    project_root = Path('e:\\ANUS_learning\\MSI5001-power-transformer-oil-temperature-prediction') if system == 'Windows' else Path('/Users/dafeng/workspace/MSI5001-power-transformer-oil-temperature-prediction')
-    
-    # 构建其他路径
-    logs_dir = project_root / 'experiment' / 'logs'
-    config_path = project_root / 'experiment' / 'experiment_group.csv'
-    output_path = project_root / 'experiment' / 'experiment_results_summary.csv'
+    # 使用相对路径，从当前脚本位置开始
+    current_dir = Path(__file__).parent
+    experiment_dir = current_dir
+    logs_dir = experiment_dir / 'logs'
+    config_path = experiment_dir / 'experiment_group.csv'
+    output_path = experiment_dir / 'experiment_results_summary.csv'
     
     print("开始提取实验日志信息...")
     
