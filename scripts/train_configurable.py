@@ -434,7 +434,7 @@ def train_informer_native(
         "--label_len", str(label_len),
         "--pred_len", str(pred_len),
         "--enc_in", "6",  # 6 input features (HUFL, HULL, MUFL, MULL, LUFL, LULL) - OT excluded
-        "--dec_in", "6",
+        "--dec_in", "1",  # Decoder input dimension matches target (OT only)
         "--c_out", "1",  # Single output (OT)
         "--d_model", str(d_model),
         "--n_heads", "8",
@@ -452,7 +452,6 @@ def train_informer_native(
         "--learning_rate", "0.0001",
         "--des", exp_id,
         "--itr", "1",  # Run once
-        "--inverse",   # Enable inverse transformation to original scale
     ]
 
     print(f"\nCalling native Informer from: {informer_dir}")
@@ -515,17 +514,40 @@ def train_informer_native(
             rmse = np.sqrt(mse)
             r2 = float(r2_match.group(1)) if r2_match else None
 
-            print(f"\nParsed metrics from Informer output:")
+            # Manual inverse transformation to original scale
+            # Read data file and calculate OT statistics from training data (first 70%)
+            data_path = informer_dir / "data" / f"TX{tx_id}.csv"
+            df_ot = pd.read_csv(data_path)
+            num_train = int(len(df_ot) * 0.7)
+            ot_train = df_ot['OT'].iloc[:num_train]
+            ot_mean = ot_train.mean()
+            ot_std = ot_train.std()
+
+            # Apply inverse transformation
+            # Formula: value_original = value_normalized * std
+            mae_original = mae * ot_std
+            rmse_original = rmse * ot_std
+            mse_original = mse * (ot_std ** 2)
+            # R2 is scale-invariant, no transformation needed
+
+            print(f"\nParsed metrics from Informer output (normalized scale):")
             print(f"  MSE:  {mse:.4f}")
             print(f"  MAE:  {mae:.4f}")
             print(f"  RMSE: {rmse:.4f}")
             if r2 is not None:
                 print(f"  R2:   {r2:.4f}")
 
+            print(f"\nMetrics after inverse transformation (original scale):")
+            print(f"  MSE:  {mse_original:.4f}")
+            print(f"  MAE:  {mae_original:.4f}")
+            print(f"  RMSE: {rmse_original:.4f}")
+            if r2 is not None:
+                print(f"  R2:   {r2:.4f}")
+
             return {
-                "RMSE": float(rmse),
-                "MAE": float(mae),
-                "MSE": float(mse),
+                "RMSE": float(rmse_original),
+                "MAE": float(mae_original),
+                "MSE": float(mse_original),
                 "R2": r2,
                 "train_time": train_time,
             }

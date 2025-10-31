@@ -283,7 +283,8 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
         if self.args.inverse:
             outputs = dataset_object.inverse_transform(outputs)
-        f_dim = -1 if self.args.features=='MS' else 0
-        batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+        # For MS mode, data_y is now already the target variable (OT) only
+        # No need for f_dim slicing - just extract the prediction horizon
+        batch_y = batch_y[:,-self.args.pred_len:,:].to(self.device)
 
         return outputs, batch_y

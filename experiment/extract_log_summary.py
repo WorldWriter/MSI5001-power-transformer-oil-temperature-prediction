@@ -147,8 +147,10 @@ def create_summary_table(logs_dir, config_df):
     
     # 合并配置信息
     if config_df is not None:
-        # 从experiment_id提取验证序号
-        results_df['验证序号'] = results_df['experiment_id'].str.extract(r'(\d+)').astype(int)
+        # 从experiment_id提取验证序号，处理可能的NaN值
+        results_df['验证序号'] = results_df['experiment_id'].str.extract(r'(\d+)')
+        # 将验证序号转换为数值类型，处理NaN值
+        results_df['验证序号'] = pd.to_numeric(results_df['验证序号'], errors='coerce')
         
         # 合并配置信息
         merged_df = pd.merge(

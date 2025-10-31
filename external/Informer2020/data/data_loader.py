@@ -51,13 +51,14 @@ class Dataset_ETT_hour(Dataset):
         border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-        
+
         if self.features=='M':
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features=='MS':
-            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
+            cols_data = df_raw.columns[1:-1]  # Input features: exclude date and target
             df_data = df_raw[cols_data]
+            df_target = df_raw[[self.target]]  # Target variable: OT
         elif self.features=='S':
             df_data = df_raw[[self.target]]
 
@@ -67,16 +68,33 @@ class Dataset_ETT_hour(Dataset):
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
-            
+
+        # For MS mode, scale target separately
+        if self.features=='MS':
+            self.target_scaler = StandardScaler()
+            if self.scale:
+                train_target = df_target.values[border1s[0]:border2s[0]]
+                self.target_scaler.fit(train_target)
+                data_target = self.target_scaler.transform(df_target.values)
+            else:
+                data_target = df_target.values
+
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
+        if self.features=='MS':
+            # For MS mode, data_y is the target variable (OT)
+            if self.inverse:
+                self.data_y = df_target.values[border1:border2]
+            else:
+                self.data_y = data_target[border1:border2]
         else:
-            self.data_y = data[border1:border2]
+            if self.inverse:
+                self.data_y = df_data.values[border1:border2]
+            else:
+                self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -94,11 +112,13 @@ class Dataset_ETT_hour(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
-    
+
     def __len__(self):
         return len(self.data_x) - self.seq_len- self.pred_len + 1
 
     def inverse_transform(self, data):
+        if self.features == 'MS' and hasattr(self, 'target_scaler'):
+            return self.target_scaler.inverse_transform(data)
         return self.scaler.inverse_transform(data)
 
 class Dataset_ETT_minute(Dataset):
@@ -140,13 +160,14 @@ class Dataset_ETT_minute(Dataset):
         border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-        
+
         if self.features=='M':
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features=='MS':
-            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
+            cols_data = df_raw.columns[1:-1]  # Input features: exclude date and target
             df_data = df_raw[cols_data]
+            df_target = df_raw[[self.target]]  # Target variable: OT
         elif self.features=='S':
             df_data = df_raw[[self.target]]
 
@@ -156,16 +177,33 @@ class Dataset_ETT_minute(Dataset):
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
-            
+
+        # For MS mode, scale target separately
+        if self.features=='MS':
+            self.target_scaler = StandardScaler()
+            if self.scale:
+                train_target = df_target.values[border1s[0]:border2s[0]]
+                self.target_scaler.fit(train_target)
+                data_target = self.target_scaler.transform(df_target.values)
+            else:
+                data_target = df_target.values
+
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        
+
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
+        if self.features=='MS':
+            # For MS mode, data_y is the target variable (OT)
+            if self.inverse:
+                self.data_y = df_target.values[border1:border2]
+            else:
+                self.data_y = data_target[border1:border2]
         else:
-            self.data_y = data[border1:border2]
+            if self.inverse:
+                self.data_y = df_data.values[border1:border2]
+            else:
+                self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -183,11 +221,13 @@ class Dataset_ETT_minute(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
-    
+
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
 
     def inverse_transform(self, data):
+        if self.features == 'MS' and hasattr(self, 'target_scaler'):
+            return self.target_scaler.inverse_transform(data)
         return self.scaler.inverse_transform(data)
 
 
@@ -243,13 +283,14 @@ class Dataset_Custom(Dataset):
         border2s = [num_train, num_train+num_vali, len(df_raw)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-        
+
         if self.features=='M':
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
         elif self.features=='MS':
-            cols_data = df_raw.columns[1:-1]  # Exclude target (OT) from input features
+            cols_data = df_raw.columns[1:-1]  # Input features: exclude date and target
             df_data = df_raw[cols_data]
+            df_target = df_raw[[self.target]]  # Target variable: OT
         elif self.features=='S':
             df_data = df_raw[[self.target]]
 
@@ -259,16 +300,33 @@ class Dataset_Custom(Dataset):
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
-            
+
+        # For MS mode, scale target separately
+        if self.features=='MS':
+            self.target_scaler = StandardScaler()
+            if self.scale:
+                train_target = df_target.values[border1s[0]:border2s[0]]
+                self.target_scaler.fit(train_target)
+                data_target = self.target_scaler.transform(df_target.values)
+            else:
+                data_target = df_target.values
+
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data[border1:border2]
-        if self.inverse:
-            self.data_y = df_data.values[border1:border2]
+        if self.features=='MS':
+            # For MS mode, data_y is the target variable (OT)
+            if self.inverse:
+                self.data_y = df_target.values[border1:border2]
+            else:
+                self.data_y = data_target[border1:border2]
         else:
-            self.data_y = data[border1:border2]
+            if self.inverse:
+                self.data_y = df_data.values[border1:border2]
+            else:
+                self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
     
     def __getitem__(self, index):
@@ -286,11 +344,13 @@ class Dataset_Custom(Dataset):
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
-    
+
     def __len__(self):
         return len(self.data_x) - self.seq_len- self.pred_len + 1
 
     def inverse_transform(self, data):
+        if self.features == 'MS' and hasattr(self, 'target_scaler'):
+            return self.target_scaler.inverse_transform(data)
         return self.scaler.inverse_transform(data)
 
 class Dataset_Pred(Dataset):
