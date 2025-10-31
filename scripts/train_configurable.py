@@ -26,6 +26,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
+import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -343,6 +347,217 @@ def evaluate_model(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     }
 
 
+def train_informer_native(
+    tx_id: int,
+    model_name: str,
+    horizon: int,
+    exp_id: str,
+    output_dir: Path,
+    log_dir: Path,
+) -> Dict[str, float]:
+    """
+    Train Informer model using the native Informer2020 implementation.
+
+    Parameters
+    ----------
+    tx_id : int
+        Transformer ID (1 or 2)
+    model_name : str
+        Model variant name (Informer-Short, Informer, or Informer-Long)
+    horizon : int
+        Prediction horizon in hours
+    exp_id : str
+        Experiment identifier
+    output_dir : Path
+        Directory to save model outputs
+    log_dir : Path
+        Directory to save training logs
+
+    Returns
+    -------
+    Dict[str, float]
+        Dictionary containing metrics and training time
+    """
+    # Get project root
+    project_root = Path(__file__).resolve().parents[1]
+    informer_dir = project_root / "external" / "Informer2020"
+
+    # Configure model parameters based on variant
+    if model_name == "Informer-Short":
+        # Short-term prediction (1 hour)
+        seq_len = 96
+        label_len = 48
+        pred_len = 1
+        d_model = 256
+        d_ff = 1024
+        e_layers = 2
+        train_epochs = 10
+        batch_size = 32
+        model_type = "informer"
+    elif model_name == "Informer":
+        # Medium-term prediction (1 day)
+        seq_len = 96
+        label_len = 48
+        pred_len = 24
+        d_model = 256
+        d_ff = 1024
+        e_layers = 2
+        train_epochs = 10
+        batch_size = 16
+        model_type = "informer"
+    elif model_name == "Informer-Long":
+        # Long-term prediction (1 week)
+        seq_len = 336
+        label_len = 168
+        pred_len = 168
+        d_model = 256
+        d_ff = 1024
+        e_layers = 3
+        train_epochs = 8
+        batch_size = 8
+        model_type = "informerstack"
+    else:
+        raise ValueError(f"Unknown Informer variant: {model_name}")
+
+    # Build command
+    data_name = f"TX{tx_id}"
+    cmd = [
+        sys.executable,
+        str(informer_dir / "main_informer.py"),
+        "--model", model_type,
+        "--data", "custom",
+        "--root_path", "./data/",
+        "--data_path", f"{data_name}.csv",
+        "--features", "MS",  # Multivariate to Single
+        "--target", "OT",
+        "--freq", "h",
+        "--seq_len", str(seq_len),
+        "--label_len", str(label_len),
+        "--pred_len", str(pred_len),
+        "--enc_in", "7",  # 7 input features (HUFL, HULL, MUFL, MULL, LUFL, LULL, OT)
+        "--dec_in", "7",
+        "--c_out", "1",  # Single output (OT)
+        "--d_model", str(d_model),
+        "--n_heads", "8",
+        "--e_layers", str(e_layers),
+        "--d_layers", "1",
+        "--d_ff", str(d_ff),
+        "--factor", "5",
+        "--dropout", "0.05",
+        "--attn", "prob",
+        "--embed", "timeF",
+        "--activation", "gelu",
+        "--batch_size", str(batch_size),
+        "--train_epochs", str(train_epochs),
+        "--patience", "3",
+        "--learning_rate", "0.0001",
+        "--des", exp_id,
+        "--itr", "1",  # Run once
+    ]
+
+    print(f"\nCalling native Informer from: {informer_dir}")
+    print(f"Command: {' '.join(cmd)}")
+
+    # Prepare log file
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"{exp_id}.log"
+
+    # Run training and capture output
+    start_time = time.time()
+
+    try:
+        with open(log_file, "w") as f:
+            f.write(f"{'='*70}\n")
+            f.write(f"Informer Native Training Log\n")
+            f.write(f"Experiment: {exp_id}\n")
+            f.write(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"{'='*70}\n\n")
+            f.write(f"Command:\n{' '.join(cmd)}\n\n")
+            f.write(f"{'='*70}\n\n")
+            f.flush()
+
+            # Run in Informer directory
+            result = subprocess.run(
+                cmd,
+                cwd=str(informer_dir),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=3600  # 1 hour timeout
+            )
+
+            # Write output to log
+            f.write(result.stdout)
+            f.write(f"\n{'='*70}\n")
+            f.write(f"Completed: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Return code: {result.returncode}\n")
+            f.write(f"{'='*70}\n")
+
+            # Also print to console
+            print(result.stdout)
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Informer training failed with return code {result.returncode}")
+
+        train_time = time.time() - start_time
+
+        # Parse metrics from output
+        output_text = result.stdout
+
+        # Look for test metrics in output (Informer prints: "mse:X.XX, mae:Y.YY")
+        mse_match = re.search(r'mse:\s*([\d.]+)', output_text, re.IGNORECASE)
+        mae_match = re.search(r'mae:\s*([\d.]+)', output_text, re.IGNORECASE)
+
+        if mse_match and mae_match:
+            mse = float(mse_match.group(1))
+            mae = float(mae_match.group(1))
+            rmse = np.sqrt(mse)
+
+            print(f"\nParsed metrics from Informer output:")
+            print(f"  MSE:  {mse:.4f}")
+            print(f"  MAE:  {mae:.4f}")
+            print(f"  RMSE: {rmse:.4f}")
+
+            return {
+                "RMSE": float(rmse),
+                "MAE": float(mae),
+                "MSE": float(mse),
+                "R2": None,  # Informer doesn't output R2
+                "train_time": train_time,
+            }
+        else:
+            print("\nWarning: Could not parse metrics from Informer output")
+            print("Please check the log file for details")
+            return {
+                "RMSE": None,
+                "MAE": None,
+                "MSE": None,
+                "R2": None,
+                "train_time": train_time,
+            }
+
+    except subprocess.TimeoutExpired:
+        print(f"\nError: Training timeout after 1 hour")
+        return {
+            "RMSE": None,
+            "MAE": None,
+            "MSE": None,
+            "R2": None,
+            "train_time": 3600.0,
+            "error": "timeout"
+        }
+    except Exception as e:
+        print(f"\nError during Informer training: {e}")
+        return {
+            "RMSE": None,
+            "MAE": None,
+            "MSE": None,
+            "R2": None,
+            "train_time": time.time() - start_time,
+            "error": str(e)
+        }
+
+
 def plot_predictions(
     timestamps: np.ndarray,
     y_true: np.ndarray,
@@ -602,40 +817,82 @@ def main() -> None:
 
     # Train model
     print(f"\nTraining {args.model}...")
-    model_builder = MODEL_BUILDERS[args.model]
-    if model_builder is None:
-        raise ValueError(f"Model '{args.model}' is not available. Informer may not be properly installed.")
-    model = model_builder()
-    model.fit(X_train, y_train)
-    train_time = time.time() - start_time
-    print(f"  Training time: {train_time:.2f}s")
 
-    # Evaluate
-    print(f"\nEvaluating...")
-    y_pred = model.predict(X_test)
-    metrics = evaluate_model(y_test, y_pred)
+    # Check if this is a native Informer model
+    if args.model in ["Informer-Short", "Informer", "Informer-Long"]:
+        # Use native Informer2020 implementation
+        log_dir = Path(__file__).resolve().parents[1] / "experiment" / "logs"
 
-    print(f"  RMSE: {metrics['RMSE']:.4f}")
-    print(f"  MAE:  {metrics['MAE']:.4f}")
-    print(f"  R2:   {metrics['R2']:.4f}")
+        result = train_informer_native(
+            tx_id=args.tx_id,
+            model_name=args.model,
+            horizon=args.horizon,
+            exp_id=exp_id,
+            output_dir=output_dir,
+            log_dir=log_dir,
+        )
+
+        # Extract metrics from result
+        train_time = result.get("train_time", 0.0)
+        metrics = {
+            "RMSE": result.get("RMSE"),
+            "MAE": result.get("MAE"),
+            "R2": result.get("R2"),
+        }
+
+        # Set dummy values for test data (Informer handles its own train/test split)
+        y_pred = None
+        ts_test = None
+
+        print(f"  Training time: {train_time:.2f}s")
+
+        if metrics["RMSE"] is not None:
+            print(f"  RMSE: {metrics['RMSE']:.4f}")
+            print(f"  MAE:  {metrics['MAE']:.4f}")
+            if metrics['R2'] is not None:
+                print(f"  R2:   {metrics['R2']:.4f}")
+        else:
+            print("  Warning: Metrics could not be parsed from Informer output")
+    else:
+        # Use standard sklearn/pytorch models
+        model_builder = MODEL_BUILDERS[args.model]
+        if model_builder is None:
+            raise ValueError(f"Model '{args.model}' is not available. Informer may not be properly installed.")
+        model = model_builder()
+        model.fit(X_train, y_train)
+        train_time = time.time() - start_time
+        print(f"  Training time: {train_time:.2f}s")
+
+        # Evaluate
+        print(f"\nEvaluating...")
+        y_pred = model.predict(X_test)
+        metrics = evaluate_model(y_test, y_pred)
+
+        print(f"  RMSE: {metrics['RMSE']:.4f}")
+        print(f"  MAE:  {metrics['MAE']:.4f}")
+        print(f"  R2:   {metrics['R2']:.4f}")
 
     # Save results
     print(f"\nSaving results...")
 
-    # Save model
-    model_path = output_dir / f"{exp_id}_model.joblib"
-    joblib.dump(model, model_path)
-    print(f"  Model: {model_path}")
+    # Save model (skip for native Informer)
+    if args.model not in ["Informer-Short", "Informer", "Informer-Long"]:
+        model_path = output_dir / f"{exp_id}_model.joblib"
+        joblib.dump(model, model_path)
+        print(f"  Model: {model_path}")
 
-    # Save predictions
-    pred_df = pd.DataFrame({
-        "timestamp": ts_test,
-        "actual": y_test,
-        "predicted": y_pred
-    }).sort_values("timestamp")
-    pred_path = TABLE_DIR / f"{exp_id}_predictions.csv"
-    pred_df.to_csv(pred_path, index=False)
-    print(f"  Predictions: {pred_path}")
+        # Save predictions
+        pred_df = pd.DataFrame({
+            "timestamp": ts_test,
+            "actual": y_test,
+            "predicted": y_pred
+        }).sort_values("timestamp")
+        pred_path = TABLE_DIR / f"{exp_id}_predictions.csv"
+        pred_df.to_csv(pred_path, index=False)
+        print(f"  Predictions: {pred_path}")
+    else:
+        print(f"  Model: Native Informer (saved in external/Informer2020/checkpoints/)")
+        print(f"  Predictions: Not saved (native Informer handles this internally)")
 
     # Save metrics
     metrics_data = {
@@ -666,17 +923,20 @@ def main() -> None:
         json.dump(metrics_data, f, indent=2)
     print(f"  Metrics: {metrics_path}")
 
-    # Plot predictions
-    plot_path = FIG_DIR / f"{exp_id}_predictions.png"
-    plot_predictions(ts_test, y_test, y_pred, plot_path,
-                    f"TX{args.tx_id} - {args.model} - {args.split_method}")
-    print(f"  Plot: {plot_path}")
+    # Plot predictions (skip for native Informer)
+    if args.model not in ["Informer-Short", "Informer", "Informer-Long"]:
+        plot_path = FIG_DIR / f"{exp_id}_predictions.png"
+        plot_predictions(ts_test, y_test, y_pred, plot_path,
+                        f"TX{args.tx_id} - {args.model} - {args.split_method}")
+        print(f"  Plot: {plot_path}")
 
-    # Plot scatter
-    scatter_path = FIG_DIR / f"{exp_id}_scatter.png"
-    plot_scatter(y_test, y_pred, scatter_path,
-                f"TX{args.tx_id} - {args.model}")
-    print(f"  Scatter: {scatter_path}")
+        # Plot scatter
+        scatter_path = FIG_DIR / f"{exp_id}_scatter.png"
+        plot_scatter(y_test, y_pred, scatter_path,
+                    f"TX{args.tx_id} - {args.model}")
+        print(f"  Scatter: {scatter_path}")
+    else:
+        print(f"  Plot: Skipped (native Informer handles visualization internally)")
 
     print("\n" + "="*70)
     print(f"Experiment complete: {exp_id}")
