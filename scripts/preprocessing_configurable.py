@@ -139,8 +139,9 @@ def main() -> None:
             combined_flag = outlier_flags
             outlier_count = int(combined_flag.sum())
 
-        # Always check physical limits if requested
-        if args.keep_physical_check or args.outlier_method == "none":
+        # Only check physical limits if explicitly requested
+        # When outlier_method is "none", we don't apply any outlier detection
+        if args.keep_physical_check:
             flags_physical = detect_physical_outliers(subset)
             combined_flag = combined_flag | flags_physical
             physical_count = int(flags_physical.sum())

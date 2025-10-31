@@ -1,0 +1,6 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 12:25:33
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 2 --model Informer-Long --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_096
+======================================================================
+

@@ -1,0 +1,47 @@
+======================================================================
+Experiment Log
+Started: 2025-10-31 15:12:03
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model RandomForest --split-method chronological --feature-mode full_6loads --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_073 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_073
+======================================================================
+Transformer:     TX1
+Model:           RandomForest
+Split method:    chronological
+Feature mode:    full_6loads
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Added TX1 dynamic features
+  Features: 25 columns
+
+Splitting data (chronological, 20% test)...
+  Train: 55744 samples
+  Test:  13936 samples
+
+Training RandomForest...
+  Training time: 4.30s
+
+Evaluating...
+  RMSE: 7.8407
+  MAE:  6.8236
+  R2:   -4.1737
+
+Saving results...
+  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_073_model.joblib
+  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_073_predictions.csv
+  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_073_metrics.json
+  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_073_predictions.png
+  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_073_scatter.png
+
+======================================================================
+Experiment complete: exp_073
+======================================================================
+
+======================================================================
+Completed: 2025-10-31 15:12:10
+Return code: 0
+======================================================================

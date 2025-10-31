@@ -157,7 +157,8 @@ def build_preprocessing_command(params: Dict) -> List[str]:
         "--outlier-method", params["outlier_method"],
     ]
 
-    if params["outlier_percentile"] is not None:
+    # Only add outlier-percentile if method is 'percentile' and value is provided
+    if params["outlier_method"] == "percentile" and params["outlier_percentile"] is not None:
         cmd.extend(["--outlier-percentile", str(params["outlier_percentile"])])
 
     if params["data_suffix"]:
