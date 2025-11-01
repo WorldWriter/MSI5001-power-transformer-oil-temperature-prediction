@@ -667,7 +667,7 @@ def main() -> None:
 
     # Feature configuration
     parser.add_argument("--feature-mode", type=str, default="full",
-                       choices=["full", "time_only", "no_time", "full_6loads"],
+                       choices=["full", "time_only", "no_time", "full_6loads", "loads_6_only"],
                        help="Feature selection mode (default: full)")
 
     # Window configuration (for random_window and group_random)
@@ -723,10 +723,16 @@ def main() -> None:
 
     # Select features
     include_tx1_dynamic = (args.tx_id == 1 and args.feature_mode != "time_only")
-    use_full_loads = (args.feature_mode == "full_6loads")
+    use_full_loads = (args.feature_mode in ["full_6loads", "loads_6_only"])
 
-    # Map full_6loads to full for the function call
-    feature_mode_mapped = "full" if args.feature_mode == "full_6loads" else args.feature_mode
+    # Map feature modes to internal representation
+    if args.feature_mode == "full_6loads":
+        feature_mode_mapped = "full"
+    elif args.feature_mode == "loads_6_only":
+        feature_mode_mapped = "no_time"
+    else:
+        feature_mode_mapped = args.feature_mode
+
     feature_cols = select_features_by_mode(feature_mode_mapped, include_tx1_dynamic, use_full_loads)
     print(f"  Features: {len(feature_cols)} columns")
 

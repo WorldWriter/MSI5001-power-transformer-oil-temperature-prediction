@@ -67,6 +67,7 @@ CONFIG_MAPPINGS = {
         "不加入年月日等特征": "no_time",
         "仅使用年月日等特征": "time_only",
         "完整特征+时间": "full_6loads",  # Use all 6 load features + time features
+        "仅使用负载特征, 不加时间": "loads_6_only",  # Use all 6 load features without time features
     },
     "window_multiplier": {
         "固定时间窗口-1倍": 1.0,
