@@ -84,23 +84,47 @@ def parse_log_file(log_path):
         if train_time_match:
             extracted_data['train_time'] = train_time_match.group(1)
         
-        # 简化评估指标提取 - 直接提取冒号后的数字
-        # R2指标：提取冒号后到行尾的数字（支持负号）
-        r2_match = re.search(r'R2:\s*(-?\d+\.?\d*)', content)
-        # MAE指标：提取冒号后到行尾的数字（支持负号）
-        mae_match = re.search(r'MAE:\s*(-?\d+\.?\d*)', content)
-        # RMSE指标：提取冒号后到行尾的数字（支持负号）
-        rmse_match = re.search(r'RMSE:\s*(-?\d+\.?\d*)', content)
+        # 检查是否为Informer模型
+        is_informer = 'informer' in extracted_data['model'].lower() if extracted_data['model'] else False
         
-        if r2_match:
-            extracted_data['R2'] = r2_match.group(1)
-        if mae_match:
-            extracted_data['MAE'] = mae_match.group(1)
-        if rmse_match:
-            extracted_data['RMSE'] = rmse_match.group(1)
-        
-        # 注意：日志中没有直接的MSE指标，如果需要MSE可以通过RMSE计算：MSE = RMSE²
-        # 但这里保持原始数据，不自动计算
+        if is_informer and 'original scale' in content.lower():
+            # 对于Informer模型，优先提取original scale的指标
+            print(f"检测到Informer模型，优先提取original scale指标: {log_path.name}")
+            
+            # 查找original scale部分的指标
+            original_scale_section = re.search(r'Metrics after inverse transformation \(original scale\):(.*?)(?=\n\n|$)', content, re.DOTALL)
+            
+            if original_scale_section:
+                original_content = original_scale_section.group(1)
+                
+                # 从original scale部分提取指标
+                r2_match = re.search(r'R2:\s*(-?\d+\.?\d*)', original_content)
+                mae_match = re.search(r'MAE:\s*(-?\d+\.?\d*)', original_content)
+                rmse_match = re.search(r'RMSE:\s*(-?\d+\.?\d*)', original_content)
+                
+                if r2_match:
+                    extracted_data['R2'] = r2_match.group(1)
+                if mae_match:
+                    extracted_data['MAE'] = mae_match.group(1)
+                if rmse_match:
+                    extracted_data['RMSE'] = rmse_match.group(1)
+                    
+                print(f"  提取到original scale指标 - R2: {extracted_data['R2']}, MAE: {extracted_data['MAE']}, RMSE: {extracted_data['RMSE']}")
+        else:
+            # 对于非Informer模型或没有original scale的情况，使用原来的提取逻辑
+            # R2指标：提取冒号后到行尾的数字（支持负号）
+            r2_match = re.search(r'R2:\s*(-?\d+\.?\d*)', content)
+            # MAE指标：提取冒号后到行尾的数字（支持负号）
+            mae_match = re.search(r'MAE:\s*(-?\d+\.?\d*)', content)
+            # RMSE指标：提取冒号后到行尾的数字（支持负号）
+            rmse_match = re.search(r'RMSE:\s*(-?\d+\.?\d*)', content)
+            
+            if r2_match:
+                extracted_data['R2'] = r2_match.group(1)
+            if mae_match:
+                extracted_data['MAE'] = mae_match.group(1)
+            if rmse_match:
+                extracted_data['RMSE'] = rmse_match.group(1)
         
         # 提取时间窗口参数
         lookback_match = re.search(r'lookback_multiplier=([\d.]+)', content)
