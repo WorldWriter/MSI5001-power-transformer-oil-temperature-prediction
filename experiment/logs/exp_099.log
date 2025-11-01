@@ -1,0 +1,49 @@
+======================================================================
+Experiment Log
+Started: 2025-11-01 13:13:51
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model RandomForest --split-method chronological --feature-mode loads_6_only --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_099 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_099
+======================================================================
+Transformer:     TX2
+Model:           RandomForest
+Split method:    chronological
+Feature mode:    loads_6_only
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Features: 6 columns
+
+Window config: WindowConfig(horizon=168, lookback=672, gap=0)
+Creating sliding windows...
+  Created 68840 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55072 windows
+  Test:  13768 windows
+
+Training RandomForest...
+  Training time: 994.36s
+
+Evaluating...
+  RMSE: 10.0523
+  MAE:  8.0409
+  R2:   0.0959
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_099_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_099_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_099_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_099_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_099_scatter.png
+
+======================================================================
+Experiment complete: exp_099
+======================================================================
+
+======================================================================
+Completed: 2025-11-01 13:30:29
+Return code: 0
+======================================================================
