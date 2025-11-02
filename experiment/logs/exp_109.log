@@ -1,0 +1,49 @@
+======================================================================
+Experiment Log
+Started: 2025-11-02 16:36:50
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 2 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 1 --experiment-name exp_109 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_109
+======================================================================
+Transformer:     TX2
+Model:           LinearRegression
+Split method:    chronological
+Feature mode:    full
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Features: 17 columns
+
+Window config: WindowConfig(horizon=1, lookback=4, gap=0)
+Creating sliding windows...
+  Created 69675 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55740 windows
+  Test:  13935 windows
+
+Training LinearRegression...
+  Training time: 0.13s
+
+Evaluating...
+  RMSE: 6.2971
+  MAE:  5.0737
+  R2:   0.6537
+
+Saving results...
+  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_109_model.joblib
+  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_109_predictions.csv
+  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_109_metrics.json
+  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_109_predictions.png
+  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_109_scatter.png
+
+======================================================================
+Experiment complete: exp_109
+======================================================================
+
+======================================================================
+Completed: 2025-11-02 16:36:54
+Return code: 0
+======================================================================

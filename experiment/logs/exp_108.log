@@ -1,0 +1,6 @@
+======================================================================
+Experiment Log
+Started: 2025-11-02 16:47:34
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_108 --data-suffix _no_outlier
+======================================================================
+

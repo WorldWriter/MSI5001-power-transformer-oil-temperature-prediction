@@ -1,0 +1,50 @@
+======================================================================
+Experiment Log
+Started: 2025-11-02 16:40:56
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_107 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
+Experiment: exp_107
+======================================================================
+Transformer:     TX1
+Model:           LinearRegression
+Split method:    chronological
+Feature mode:    full
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Added TX1 dynamic features
+  Features: 21 columns
+
+Window config: WindowConfig(horizon=24, lookback=96, gap=0)
+Creating sliding windows...
+  Created 69560 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55648 windows
+  Test:  13912 windows
+
+Training LinearRegression...
+  Training time: 3.28s
+
+Evaluating...
+  RMSE: 11.0225
+  MAE:  9.9003
+  R2:   -9.2322
+
+Saving results...
+  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_107_model.joblib
+  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_107_predictions.csv
+  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_107_metrics.json
+  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_107_predictions.png
+  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_107_scatter.png
+
+======================================================================
+Experiment complete: exp_107
+======================================================================
+
+======================================================================
+Completed: 2025-11-02 16:41:02
+Return code: 0
+======================================================================
