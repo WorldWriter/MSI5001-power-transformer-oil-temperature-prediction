@@ -1,6 +1,50 @@
 ======================================================================
 Experiment Log
-Started: 2025-11-02 16:47:34
-Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_108 --data-suffix _no_outlier
+Started: 2025-11-02 16:51:13
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_108 --data-suffix _no_outlier
 ======================================================================
 
+======================================================================
+Experiment: exp_108
+======================================================================
+Transformer:     TX1
+Model:           LinearRegression
+Split method:    chronological
+Feature mode:    full
+Data suffix:     _no_outlier
+
+Loading data...
+  Total samples: 69680
+  Added TX1 dynamic features
+  Features: 21 columns
+
+Window config: WindowConfig(horizon=168, lookback=672, gap=0)
+Creating sliding windows...
+  Created 68840 windows
+Splitting windows (chronological, 20% test)...
+  Train: 55072 windows
+  Test:  13768 windows
+
+Training LinearRegression...
+  Training time: 195.00s
+
+Evaluating...
+  RMSE: 9.6636
+  MAE:  8.2739
+  R2:   -6.9768
+
+Saving results...
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_108_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_108_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_108_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_108_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_108_scatter.png
+
+======================================================================
+Experiment complete: exp_108
+======================================================================
+
+======================================================================
+Completed: 2025-11-02 16:54:32
+Return code: 0
+======================================================================

@@ -1,7 +1,7 @@
 ======================================================================
 Experiment Log
-Started: 2025-11-02 16:36:54
-Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 2 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_110 --data-suffix _no_outlier
+Started: 2025-11-02 16:54:35
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model LinearRegression --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 24 --experiment-name exp_110 --data-suffix _no_outlier
 ======================================================================
 
 ======================================================================
@@ -25,25 +25,25 @@ Splitting windows (chronological, 20% test)...
   Test:  13912 windows
 
 Training LinearRegression...
-  Training time: 2.27s
+  Training time: 1.89s
 
 Evaluating...
-  RMSE: 6.0003
-  MAE:  4.8497
-  R2:   0.6848
+  RMSE: 5.5891
+  MAE:  4.3778
+  R2:   0.7265
 
 Saving results...
-  Model: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_110_model.joblib
-  Predictions: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/tables/exp_110_predictions.csv
-  Metrics: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/models/experiments/exp_110_metrics.json
-  Plot: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_110_predictions.png
-  Scatter: /Users/dafeng/Documents/ai_learning/NUS_courses/MSI5001/group_work/MSI5001-power-transformer-oil-temperature-prediction/results/figures/exp_110_scatter.png
+  Model: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_110_model.joblib
+  Predictions: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\tables\exp_110_predictions.csv
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_110_metrics.json
+  Plot: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_110_predictions.png
+  Scatter: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\results\figures\exp_110_scatter.png
 
 ======================================================================
 Experiment complete: exp_110
 ======================================================================
 
 ======================================================================
-Completed: 2025-11-02 16:36:58
+Completed: 2025-11-02 16:54:41
 Return code: 0
 ======================================================================
