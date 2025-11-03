@@ -13,7 +13,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 RESULTS_DIR = PROJECT_ROOT / "results"
 FIG_DIR = RESULTS_DIR / "figures"
 TABLE_DIR = RESULTS_DIR / "tables"
-CLEAN_DIR = PROJECT_ROOT / "processed"
+CLEAN_DIR = PROJECT_ROOT / "data" / "processed"
 
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 TABLE_DIR.mkdir(parents=True, exist_ok=True)
@@ -35,7 +35,7 @@ class DatasetSummary:
 def load_raw_data() -> pd.DataFrame:
     frames = []
     for idx, filename in enumerate(["trans_1.csv", "trans_2.csv"], start=1):
-        path = DATA_DIR / filename
+        path = DATA_DIR / "raw" / filename
         df = pd.read_csv(path)
         if "date" not in df.columns:
             raise ValueError(f"{filename} missing 'date' column.")

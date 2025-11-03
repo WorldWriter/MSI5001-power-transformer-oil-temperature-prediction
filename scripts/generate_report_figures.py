@@ -18,10 +18,10 @@ plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['font.size'] = 10
 
 # 设置路径
-BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR / 'MSI5001-power-transformer-oil-temperature-prediction' / 'external' / 'Informer2020' / 'data'
-RESULTS_DIR = BASE_DIR / 'MSI5001-power-transformer-oil-temperature-prediction' / 'results' / 'tables'
-FIG_DIR = BASE_DIR / 'figures'
+BASE_DIR = Path(__file__).resolve().parents[1]  # Go up to project root
+DATA_DIR = BASE_DIR / 'external' / 'Informer2020' / 'data'
+RESULTS_DIR = BASE_DIR / 'results' / 'tables'
+FIG_DIR = BASE_DIR / 'results' / 'figures'
 FIG_DIR.mkdir(exist_ok=True)
 
 print("=" * 60)

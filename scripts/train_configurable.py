@@ -863,7 +863,7 @@ def main() -> None:
     # Check if this is a native Informer model
     if args.model in ["Informer-Short", "Informer", "Informer-Long"]:
         # Use native Informer2020 implementation
-        log_dir = Path(__file__).resolve().parents[1] / "experiment" / "logs"
+        log_dir = Path(__file__).resolve().parents[1] / "results" / "logs"
 
         result = train_informer_native(
             tx_id=args.tx_id,
