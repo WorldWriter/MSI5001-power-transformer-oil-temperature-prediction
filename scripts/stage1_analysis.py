@@ -105,6 +105,33 @@ def compute_lag_correlations(df: pd.DataFrame, transformer_id: int, max_lag_hour
     plt.savefig(FIG_DIR / f"tx{transformer_id}_lag_correlation_heatmap.png", dpi=200)
     plt.close()
 
+    hull_corr = corr_df.loc["HULL"].dropna()
+    lag_hours = [int(col.rstrip("h")) for col in hull_corr.index]
+    plt.figure(figsize=(10, 4))
+    plt.plot(lag_hours, hull_corr.values, marker="o", linewidth=2)
+    max_idx = hull_corr.idxmax()
+    max_hour = int(max_idx.rstrip("h"))
+    max_value = hull_corr.loc[max_idx]
+    plt.scatter([max_hour], [max_value], color="crimson", zorder=5, label="Max correlation")
+    plt.annotate(
+        f"Peak: {max_value:.2f} at {max_hour}h",
+        xy=(max_hour, max_value),
+        xytext=(5, 10),
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+        fontsize=10,
+        color="crimson",
+    )
+    plt.title(f"Transformer {transformer_id} - HULL vs OT Lag Correlation")
+    plt.xlabel("Lag (hours)")
+    plt.ylabel("Correlation coefficient")
+    plt.grid(True, linestyle="--", alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / f"tx{transformer_id}_hull_ot_lag_correlation_line.png", dpi=200)
+    plt.close()
+
 
 def summarize_transformers(df: pd.DataFrame) -> None:
     records: Dict[str, Dict[str, object]] = {}
