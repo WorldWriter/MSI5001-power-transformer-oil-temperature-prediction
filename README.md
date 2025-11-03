@@ -39,8 +39,8 @@ This project develops and evaluates machine learning models for predicting power
 
 | Transformer | Type | Period | Samples | Interval |
 |------------|------|--------|---------|----------|
-| **TX1** | Industrial | Jul 2018 - Mar 2019 | 52,416 | 15 min |
-| **TX2** | Residential | Jul 2018 - Mar 2019 | 52,416 | 15 min |
+| **TX1** | Industrial | 2018-07-01 - 2020-06-26 | 69,680 | 15 min |
+| **TX2** | Residential | 2018-07-01 - 2020-06-26 | 69,680 | 15 min |
 
 **Features**: 6 electrical load measurements (HUFL, HULL, MUFL, MULL, LUFL, LULL)
 **Target**: Oil Temperature (°C)
