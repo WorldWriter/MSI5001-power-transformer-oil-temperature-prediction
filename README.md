@@ -45,6 +45,10 @@ This project develops and evaluates machine learning models for predicting power
 **Features**: 6 electrical load measurements (HUFL, HULL, MUFL, MULL, LUFL, LULL)
 **Target**: Oil Temperature (°C)
 
+| TX1 vs TX2 Weekly Load Patterns | Long-Term Load Comparison |
+| --- | --- |
+| ![Weekly load comparison for TX1 (industrial) and TX2 (residential)](results/figures/fig1a_load_comparison_weekly.png) | ![Two-year load comparison emphasizing volatility differences](results/figures/fig1b_load_comparison_longterm.png) |
+
 ### Models Evaluated
 
 1. **LinearRegression** - Baseline model
@@ -68,6 +72,9 @@ This project develops and evaluates machine learning models for predicting power
 - **Impact**: Removing time features causes 0.5-0.7 R² degradation
 - **Recommendation**: Always include cyclical time encoding (hour, day, month)
 
+![Performance impact when removing temporal features from the models](results/figures/fig6_time_feature_impact.png)
+*Figure: Temporal features dramatically lift model performance, especially for tree-based methods.*
+
 ### 3. TX1 (Industrial) vs TX2 (Residential) Difficulty Gap
 - **TX1**: LinearRegression completely fails (R² = -6.95)
 - **TX2**: LinearRegression works well (R² = 0.72)
@@ -79,6 +86,9 @@ This project develops and evaluates machine learning models for predicting power
 - **Chronological split**: R² = -4.36 (true generalization)
 - **Performance inflation**: **5.29× overestimation** due to data leakage
 - **Conclusion**: Only chronological split reveals real-world forecasting capability
+
+![Comparison between random sliding-window and chronological data splits](results/figures/fig3_data_split.png)
+*Figure: Chronological splits expose the generalization gap caused by leakage in random splits.*
 
 ---
 
@@ -199,6 +209,9 @@ Set `FORCE_RETRAIN = True` to retrain all models from scratch (default: load cac
 ---
 
 ## 📈 Model Comparison
+
+![Model performance across horizons and transformers](results/figures/fig8_complete_model_comparison.png)
+*Figure: Informer dominates short horizons, while simpler models suffice for TX2 long-term forecasts.*
 
 ### Performance Summary (Chronological Split)
 
