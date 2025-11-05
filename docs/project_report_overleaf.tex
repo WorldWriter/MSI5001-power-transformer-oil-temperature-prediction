@@ -1,0 +1,131 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{float}
+\title{Transformer Oil Temperature Forecasting on MSI5001 Dataset}
+\author{MSI5001 Final Project Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a reproducible forecasting pipeline for transformer oil temperature. Two transformers (TX1, TX2) share identical instrumentation but exhibit distinct thermal regimes. Our workflow covers data auditing, transformer-specific preprocessing, feature engineering with calendar encodings, and comparative experiments across chronological and randomly shuffled sliding-window splits. Results demonstrate that high/medium-voltage reactive loads (HULL, MULL) together with temporal descriptors provide the strongest predictive capability. TX2 achieves reliable performance under chronological evaluation, whereas TX1 requires longer history windows and dynamic features to capture lag effects. Randomly shuffled windows reveal the upper bound of model capacity but substantially overestimate deployable performance.
+\end{abstract}
+
+\section{Introduction}
+Industrial asset monitoring increasingly relies on data-driven forecasting of key health indicators. In the MSI5001 course dataset, each transformer produces multi-channel load measurements and oil temperature (OT) readings at 15-minute intervals from July~2018 to June~2020. Although TX1 and TX2 share the same sensors, their thermal trajectories diverge. The primary objectives of this study are:
+\begin{enumerate}
+    \item assess data quality and transformer-specific characteristics;
+    \item identify dominant predictors, emphasising reactive loads (HULL, MULL) and temporal descriptors;
+    \item construct a leakage-free preprocessing pipeline (anomaly removal, sequential standardisation);
+    \item evaluate classical ML models (Linear, Ridge, RandomForest) and an MLP across different dataset splits; and
+    \item derive insights that guide future deployment-oriented modelling.
+\end{enumerate}
+All artefacts are available in the project directory \texttt{MSI5001-final/}, with tables and figures cited by file name.
+
+\section{Methodology}
+\subsection{Data Overview}
+The raw files \texttt{trans\_1.csv} and \texttt{trans\_2.csv} contain the high-, medium-, and low-voltage loads plus OT. Quality checks (\texttt{missing\_values\_summary.csv}, \texttt{data\_types.csv}) confirm numeric fields and zero missing values. Transformer summary statistics (\texttt{transformer\_summary.csv}) and the trend plot (\texttt{ot\_trend\_by\_transformer.png}) show that TX1 operates at a cooler temperature (mean 13.3\,°C, $\sigma = 8.6$\,°C), whereas TX2 is hotter (mean 26.6\,°C, $\sigma = 11.9$\,°C). Consequently, each transformer is processed independently.
+
+\subsection{Temporal Feature Engineering}
+To capture operational rhythms, we augment each sample with:
+\begin{itemize}
+    \item calendar variables: hour, day-of-week, month, and day-of-year;
+    \item periodic encodings: sine/cosine transforms for hour, month, day-of-year maintaining cyclic continuity;
+    \item categorical indicators: \texttt{is\_weekend}, \texttt{is\_worktime}, and season (spring--winter).
+\end{itemize}
+These features, derived in \texttt{add\_time\_features}, were instrumental in achieving stable forecasts and constitute a highlight of the pipeline.
+
+\subsection{Target Features and Window Design}
+Correlation heatmaps (\texttt{tx1\_correlation\_heatmap.png}, \texttt{tx2\_correlation\_heatmap.png}) reveal that HULL and MULL are the most informative electrical predictors. Lag correlation matrices (\texttt{tx1\_lag\_correlation\_heatmap.png}, \texttt{tx2\_lag\_correlation\_heatmap.png}) indicate:
+\begin{itemize}
+    \item TX1 benefits from 8--12\,h histories; we therefore adopt a lookback of 48 samples ($\approx$ 12\,h) with a 1-step (15\,min) horizon.
+    \item TX2 reacts almost instantaneously; a 24-sample (6\,h) lookback suffices.
+\end{itemize}
+For TX1 we further introduce dynamic features (first differences and 12-sample rolling means of HULL/MULL) to capture inertial effects.
+
+\subsection{Cleaning and Standardisation}
+We remove anomalies when any of the following occurs (focused on HULL, MULL, OT): (i) IQR rule exceeded; (ii) rolling Z-score (6\,h window) beyond threshold; (iii) OT outside the physical range $[-20, 120]$\,°C. Low-voltage loads may be negative (reverse flow) and are retained. This procedure yields cleaned datasets \texttt{tx\{1,2\}\_cleaned.csv} with 65{,}562 (TX1) and 66{,}919 (TX2) samples. Sequential (expanding) z-score standardisation is applied afterwards and stored in \texttt{tx\{1,2\}\_standardized.csv}; parameters are logged in \texttt{standardization\_params.json}.
+
+\subsection{Modelling Protocols}
+\paragraph{Chronological split.}
+`scripts/model_training.py` trains on the earliest 80\% of each timeline and tests on the latest 20\%. Models include RandomForest (120 estimators, max depth 12, min samples leaf 5) and a two-layer MLP (128, 64 units with early stopping). Outputs: `models/baseline/`, `model_performance(_std).csv`, prediction plots `tx{1,2}_{Model}[_std]_prediction.png`.
+
+\paragraph{Random sliding-window split.}
+`scripts/model_random_split.py` constructs sliding-window pairs with the aforementioned lookback/horizon settings, sub-samples up to 30k windows for computational efficiency, performs an 80/20 shuffle split, and trains LinearRegression, Ridge ($\alpha=5$), RandomForest, and MLP models. Artefacts: `models/random_split/`, `random_split_performance.csv`, scatter plots `random_tx{1,2}_{Model}_scatter.png`.
+
+\section{Results}
+\subsection{Chronological Evaluation}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        Transformer & Model & RMSE (°C) & MAE (°C) & $R^2$ \\
+        \midrule
+        TX1 & RandomForest & 8.03 & 7.03 & $-4.61$ \\
+        TX1 & MLP          & 8.13 & 7.08 & $-4.75$ \\
+        TX2 & RandomForest & 6.45 & 4.97 & \textbf{0.63} \\
+        TX2 & MLP          & 6.77 & 5.41 & 0.59 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Chronological split results (see `model_performance_all.csv`).}
+    \label{tab:chronological}
+\end{table}
+TX2 achieves moderate accuracy with the proposed features; TX1 remains challenging because the holdout period exhibits low-variance drift that is poorly captured by limited dynamics.
+
+\subsection{Random Sliding-Window Evaluation}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        Transformer & Model & RMSE (°C) & MAE (°C) & $R^2$ \\
+        \midrule
+        TX1 & LinearRegression & 10.19 & 4.36 & $-0.81$ \\
+        TX1 & Ridge            & 8.69  & 4.21 & $-0.31$ \\
+        TX1 & RandomForest     & \textbf{1.89} & \textbf{1.30} & \textbf{0.94} \\
+        TX1 & MLP              & 2.96  & 2.23 & 0.85 \\
+        TX2 & LinearRegression & 22.85 & 4.24 & $-2.62$ \\
+        TX2 & Ridge            & 9.04  & 3.95 & 0.43 \\
+        TX2 & RandomForest     & \textbf{2.23} & \textbf{1.63} & \textbf{0.97} \\
+        TX2 & MLP              & 3.57  & 2.75 & 0.91 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Random sliding-window split results (`random_split_performance.csv`).}
+    \label{tab:random}
+\end{table}
+Random splits reveal the upper bound of model capacity. TX1 becomes highly predictable after introducing dynamic features, whereas TX2 remains strong across all models. However, these results are optimistic because training and test windows share similar temporal regimes.
+
+\section{Discussion}
+\begin{itemize}
+    \item \textbf{Temporal encodings are indispensable.} Calendar components and sine/cosine transforms capture diurnal and seasonal structure; without them, prediction accuracy deteriorates sharply.
+    \item \textbf{Window and dynamic design.} TX1 demands a 12-hour lookback and dynamic features to account for lagged behaviour; TX2 performs adequately with a 6-hour lookback.
+    \item \textbf{Evaluation strategy.} Chronological splits align with deployment reality, whereas random splits serve as stress tests for model capacity. Rolling-window evaluation is recommended for future robustness studies.
+\end{itemize}
+
+\section{Conclusion}
+The proposed workflow produces transformer-specific cleaned and standardised datasets, validates HULL/MULL plus temporal descriptors (with dynamics for TX1), and elucidates the gap between chronological and random-split performance. TX2 is nearing deployment readiness; TX1 still requires richer contextual features (e.g., ambient conditions, maintenance logs) and rolling evaluation to ensure stability.
+
+\section*{References}
+\begin{enumerate}
+    \item MSI5001 Course Dataset (internal distribution).
+    \item Pedregosa, F. et al., ``Scikit-learn: Machine Learning in Python,'' \textit{Journal of Machine Learning Research}, 12, 2011.
+    \item Bishop, C.~M., \textit{Pattern Recognition and Machine Learning}, Springer, 2006.
+\end{enumerate}
+
+\appendix
+\section{Key Artefacts}
+\begin{itemize}
+    \item Quality assurance: `missing_values_summary.csv`, `data_types.csv`
+    \item Transformer statistics and trends: `transformer_summary.csv`, `ot_trend_by_transformer.png`
+    \item Correlation and lag visuals: `tx{1,2}_correlation_heatmap.png`, `tx{1,2}_lag_correlation_heatmap.png`
+    \item Clean/standardised datasets: `processed/tx{1,2}_cleaned.csv`, `tx{1,2}_standardized.csv`
+    \item Chronological models: `models/baseline/`, `model_performance_all.csv`, `tx{1,2}_{Model}[_std]_prediction.png`
+    \item Random-split models: `models/random_split/`, `random_split_performance.csv`, `random_tx{1,2}_{Model}_scatter.png`
+\end{itemize}
+
+\end{document}
