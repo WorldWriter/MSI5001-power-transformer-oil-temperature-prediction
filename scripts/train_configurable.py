@@ -353,6 +353,20 @@ def train_informer_native(
     exp_id: str,
     output_dir: Path,
     log_dir: Path,
+    # Optional parameter overrides
+    seq_len: int = None,
+    label_len: int = None,
+    pred_len: int = None,
+    d_model: int = None,
+    n_heads: int = None,
+    e_layers: int = None,
+    d_layers: int = None,
+    d_ff: int = None,
+    factor: int = None,
+    train_epochs: int = None,
+    batch_size: int = None,
+    learning_rate: float = None,
+    patience: int = None,
 ) -> Dict[str, float]:
     """
     Train Informer model using the native Informer2020 implementation.
@@ -371,6 +385,32 @@ def train_informer_native(
         Directory to save model outputs
     log_dir : Path
         Directory to save training logs
+    seq_len : int, optional
+        Encoder input sequence length (overrides model default)
+    label_len : int, optional
+        Decoder start token length (overrides model default)
+    pred_len : int, optional
+        Prediction sequence length (overrides model default)
+    d_model : int, optional
+        Model dimension (overrides model default)
+    n_heads : int, optional
+        Number of attention heads (overrides model default)
+    e_layers : int, optional
+        Number of encoder layers (overrides model default)
+    d_layers : int, optional
+        Number of decoder layers (overrides model default)
+    d_ff : int, optional
+        Feed-forward dimension (overrides model default)
+    factor : int, optional
+        ProbSparse attention factor (overrides model default)
+    train_epochs : int, optional
+        Number of training epochs (overrides model default)
+    batch_size : int, optional
+        Batch size (overrides model default)
+    learning_rate : float, optional
+        Learning rate (overrides model default)
+    patience : int, optional
+        Early stopping patience (overrides model default)
 
     Returns
     -------
@@ -381,42 +421,72 @@ def train_informer_native(
     project_root = Path(__file__).resolve().parents[1]
     informer_dir = project_root / "external" / "Informer2020"
 
-    # Configure model parameters based on variant
+    # Configure model parameters based on variant (set defaults)
     if model_name == "Informer-Short":
         # Short-term prediction (1 hour)
-        seq_len = 96
-        label_len = 48
-        pred_len = 1
-        d_model = 256
-        d_ff = 1024
-        e_layers = 2
-        train_epochs = 10
-        batch_size = 32
+        default_seq_len = 96
+        default_label_len = 48
+        default_pred_len = 1
+        default_d_model = 256
+        default_d_ff = 1024
+        default_e_layers = 2
+        default_d_layers = 1
+        default_n_heads = 8
+        default_factor = 5
+        default_train_epochs = 10
+        default_batch_size = 32
+        default_learning_rate = 0.0001
+        default_patience = 3
         model_type = "informer"
     elif model_name == "Informer":
         # Medium-term prediction (1 day)
-        seq_len = 96
-        label_len = 48
-        pred_len = 24
-        d_model = 256
-        d_ff = 1024
-        e_layers = 2
-        train_epochs = 10
-        batch_size = 16
+        default_seq_len = 96
+        default_label_len = 48
+        default_pred_len = 24
+        default_d_model = 256
+        default_d_ff = 1024
+        default_e_layers = 2
+        default_d_layers = 1
+        default_n_heads = 8
+        default_factor = 5
+        default_train_epochs = 10
+        default_batch_size = 16
+        default_learning_rate = 0.0001
+        default_patience = 3
         model_type = "informer"
     elif model_name == "Informer-Long":
         # Long-term prediction (1 week)
-        seq_len = 336
-        label_len = 168
-        pred_len = 168
-        d_model = 256
-        d_ff = 1024
-        e_layers = 3
-        train_epochs = 8
-        batch_size = 8
+        default_seq_len = 336
+        default_label_len = 168
+        default_pred_len = 168
+        default_d_model = 256
+        default_d_ff = 1024
+        default_e_layers = 3
+        default_d_layers = 1
+        default_n_heads = 8
+        default_factor = 5
+        default_train_epochs = 8
+        default_batch_size = 8
+        default_learning_rate = 0.0001
+        default_patience = 3
         model_type = "informerstack"
     else:
         raise ValueError(f"Unknown Informer variant: {model_name}")
+
+    # Use provided parameters or fall back to defaults
+    seq_len = seq_len if seq_len is not None else default_seq_len
+    label_len = label_len if label_len is not None else default_label_len
+    pred_len = pred_len if pred_len is not None else default_pred_len
+    d_model = d_model if d_model is not None else default_d_model
+    n_heads = n_heads if n_heads is not None else default_n_heads
+    e_layers = e_layers if e_layers is not None else default_e_layers
+    d_layers = d_layers if d_layers is not None else default_d_layers
+    d_ff = d_ff if d_ff is not None else default_d_ff
+    factor = factor if factor is not None else default_factor
+    train_epochs = train_epochs if train_epochs is not None else default_train_epochs
+    batch_size = batch_size if batch_size is not None else default_batch_size
+    learning_rate = learning_rate if learning_rate is not None else default_learning_rate
+    patience = patience if patience is not None else default_patience
 
     # Build command
     data_name = f"TX{tx_id}"
@@ -437,19 +507,19 @@ def train_informer_native(
         "--dec_in", "1",  # Decoder input dimension matches target (OT only)
         "--c_out", "1",  # Single output (OT)
         "--d_model", str(d_model),
-        "--n_heads", "8",
+        "--n_heads", str(n_heads),
         "--e_layers", str(e_layers),
-        "--d_layers", "1",
+        "--d_layers", str(d_layers),
         "--d_ff", str(d_ff),
-        "--factor", "5",
+        "--factor", str(factor),
         "--dropout", "0.05",
         "--attn", "prob",
         "--embed", "timeF",
         "--activation", "gelu",
         "--batch_size", str(batch_size),
         "--train_epochs", str(train_epochs),
-        "--patience", "3",
-        "--learning_rate", "0.0001",
+        "--patience", str(patience),
+        "--learning_rate", str(learning_rate),
         "--des", exp_id,
         "--itr", "1",  # Run once
     ]
@@ -686,6 +756,36 @@ def main() -> None:
     parser.add_argument("--experiment-name", type=str, default="",
                        help="Experiment name for output files")
 
+    # Informer-specific architecture parameters (optional overrides)
+    parser.add_argument("--seq-len", type=int, default=None,
+                       help="Encoder input sequence length (overrides model default)")
+    parser.add_argument("--label-len", type=int, default=None,
+                       help="Decoder start token length (overrides model default)")
+    parser.add_argument("--pred-len", type=int, default=None,
+                       help="Prediction sequence length (overrides model default)")
+    parser.add_argument("--d-model", type=int, default=None,
+                       help="Model dimension (overrides model default)")
+    parser.add_argument("--n-heads", type=int, default=None,
+                       help="Number of attention heads (overrides model default)")
+    parser.add_argument("--e-layers", type=int, default=None,
+                       help="Number of encoder layers (overrides model default)")
+    parser.add_argument("--d-layers", type=int, default=None,
+                       help="Number of decoder layers (overrides model default)")
+    parser.add_argument("--d-ff", type=int, default=None,
+                       help="Feed-forward dimension (overrides model default)")
+    parser.add_argument("--factor", type=int, default=None,
+                       help="ProbSparse attention factor (overrides model default)")
+
+    # Informer-specific training parameters (optional overrides)
+    parser.add_argument("--train-epochs", type=int, default=None,
+                       help="Number of training epochs (overrides model default)")
+    parser.add_argument("--batch-size", type=int, default=None,
+                       help="Batch size (overrides model default)")
+    parser.add_argument("--learning-rate", type=float, default=None,
+                       help="Learning rate (overrides model default)")
+    parser.add_argument("--patience", type=int, default=None,
+                       help="Early stopping patience (overrides model default)")
+
     args = parser.parse_args()
 
     # Setup output directory
@@ -872,6 +972,20 @@ def main() -> None:
             exp_id=exp_id,
             output_dir=output_dir,
             log_dir=log_dir,
+            # Pass optional parameter overrides
+            seq_len=args.seq_len,
+            label_len=args.label_len,
+            pred_len=args.pred_len,
+            d_model=args.d_model,
+            n_heads=args.n_heads,
+            e_layers=args.e_layers,
+            d_layers=args.d_layers,
+            d_ff=args.d_ff,
+            factor=args.factor,
+            train_epochs=args.train_epochs,
+            batch_size=args.batch_size,
+            learning_rate=args.learning_rate,
+            patience=args.patience,
         )
 
         # Extract metrics from result
