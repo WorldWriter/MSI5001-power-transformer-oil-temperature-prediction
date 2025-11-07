@@ -1,0 +1,48 @@
+======================================================================
+Informer Native Training Log
+Experiment: exp_118
+Started: 2025-11-06 21:02:09
+======================================================================
+
+Command:
+C:\ProgramData\anaconda3\python.exe E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\main_informer.py --model informerstack --data custom --root_path ./data/ --data_path TX1.csv --features MS --target OT --freq h --seq_len 336 --label_len 168 --pred_len 168 --enc_in 6 --dec_in 1 --c_out 1 --d_model 256 --n_heads 8 --e_layers 3 --d_layers 1 --d_ff 1024 --factor 5 --dropout 0.05 --attn prob --embed timeF --activation gelu --batch_size 8 --train_epochs 8 --patience 3 --learning_rate 0.0001 --des exp_118 --itr 1
+
+======================================================================
+
+Args in experiment:
+Namespace(model='informerstack', data='custom', root_path='./data/', data_path='TX1.csv', features='MS', target='OT', freq='h', checkpoints='./checkpoints/', seq_len=336, label_len=168, pred_len=168, enc_in=6, dec_in=1, c_out=1, d_model=256, n_heads=8, e_layers=3, d_layers=1, s_layers=[3, 2, 1], d_ff=1024, factor=5, padding=0, distil=True, dropout=0.05, attn='prob', embed='timeF', activation='gelu', output_attention=False, do_predict=False, mix=True, cols=None, num_workers=0, itr=1, train_epochs=8, batch_size=8, patience=3, learning_rate=0.0001, des='exp_118', loss='mse', lradj='type1', use_amp=False, inverse=False, use_gpu=True, gpu=0, use_multi_gpu=False, devices='0,1,2,3', detail_freq='h')
+Use GPU: cuda:0
+Traceback (most recent call last):
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\main_informer.py", line 103, in <module>
+    exp = Exp(args) # set experiments
+          ^^^^^^^^^
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\exp\exp_informer.py", line 23, in __init__
+    super(Exp_Informer, self).__init__(args)
+  File "E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\exp\exp_basic.py", line 9, in __init__
+    self.model = self._build_model().to(self.device)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1173, in to
+    return self._apply(convert)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 779, in _apply
+    module._apply(fn)
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 779, in _apply
+    module._apply(fn)
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 779, in _apply
+    module._apply(fn)
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 804, in _apply
+    param_applied = fn(param)
+                    ^^^^^^^^^
+  File "C:\Users\DaFeng\AppData\Roaming\Python\Python312\site-packages\torch\nn\modules\module.py", line 1159, in convert
+    return t.to(
+           ^^^^^
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+======================================================================
+Completed: 2025-11-06 21:02:15
+Return code: 1
+======================================================================
