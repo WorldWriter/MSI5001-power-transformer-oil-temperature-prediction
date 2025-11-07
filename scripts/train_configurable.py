@@ -31,6 +31,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -367,6 +368,10 @@ def train_informer_native(
     batch_size: int = None,
     learning_rate: float = None,
     patience: int = None,
+    # Additional parameters for experiment recording
+    split_method: str = "chronological",
+    feature_mode: str = "full",
+    lookback_multiplier: float = 4.0,
 ) -> Dict[str, float]:
     """
     Train Informer model using the native Informer2020 implementation.
@@ -614,13 +619,47 @@ def train_informer_native(
             if r2 is not None:
                 print(f"  R2:   {r2:.4f}")
 
-            return {
+            # Prepare result dictionary
+            result_metrics = {
                 "RMSE": float(rmse_original),
                 "MAE": float(mae_original),
                 "MSE": float(mse_original),
                 "R2": r2,
                 "train_time": train_time,
             }
+
+            # Record experiment to CSV
+            try:
+                append_experiment_record(
+                    results_dir=output_dir.parent,
+                    experiment_id=exp_id,
+                    tx_id=tx_id,
+                    model=model_name,
+                    split_method=split_method,
+                    feature_mode=feature_mode,
+                    horizon=horizon,
+                    lookback_multiplier=lookback_multiplier,
+                    seq_len=seq_len,
+                    label_len=label_len,
+                    pred_len=pred_len,
+                    d_model=d_model,
+                    n_heads=n_heads,
+                    e_layers=e_layers,
+                    d_layers=d_layers,
+                    d_ff=d_ff,
+                    factor=factor,
+                    train_epochs=train_epochs,
+                    batch_size=batch_size,
+                    learning_rate=learning_rate,
+                    patience=patience,
+                    metrics=result_metrics,
+                    train_time=train_time,
+                    status='success',
+                )
+            except Exception as e:
+                print(f"Warning: Failed to record experiment: {e}")
+
+            return result_metrics
         else:
             print("\nWarning: Could not parse metrics from Informer output")
             print("Please check the log file for details")
@@ -652,6 +691,107 @@ def train_informer_native(
             "train_time": time.time() - start_time,
             "error": str(e)
         }
+
+
+def append_experiment_record(
+    results_dir: Path,
+    experiment_id: str,
+    tx_id: int,
+    model: str,
+    split_method: str,
+    feature_mode: str,
+    horizon: int,
+    lookback_multiplier: float,
+    seq_len: int,
+    label_len: int,
+    pred_len: int,
+    d_model: int,
+    n_heads: int,
+    e_layers: int,
+    d_layers: int,
+    d_ff: int,
+    factor: int,
+    train_epochs: int,
+    batch_size: int,
+    learning_rate: float,
+    patience: int,
+    metrics: dict,
+    train_time: float,
+    status: str,
+):
+    """
+    Append experiment record to informer_further_experiment.csv.
+
+    This function creates or appends to a CSV file that tracks all Informer
+    experiments with their parameters and results.
+
+    Args:
+        results_dir: Directory where the CSV file will be saved
+        experiment_id: Unique experiment identifier (e.g., "exp_112")
+        tx_id: Transformer ID (1 or 2)
+        model: Model name
+        split_method: Data split method
+        feature_mode: Feature selection mode
+        horizon: Prediction horizon
+        lookback_multiplier: Lookback window multiplier
+        seq_len: Encoder sequence length
+        label_len: Decoder label length
+        pred_len: Prediction length
+        d_model: Model dimension
+        n_heads: Number of attention heads
+        e_layers: Number of encoder layers
+        d_layers: Number of decoder layers
+        d_ff: Feed-forward dimension
+        factor: ProbSparse attention factor
+        train_epochs: Number of training epochs
+        batch_size: Batch size
+        learning_rate: Learning rate
+        patience: Early stopping patience
+        metrics: Dictionary containing MSE, MAE, R2
+        train_time: Training time in seconds
+        status: Experiment status (success/failed/oom)
+    """
+    csv_path = results_dir / "informer_further_experiment.csv"
+
+    # Prepare record data
+    record = {
+        'experiment_id': experiment_id,
+        'completed_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'status': status,
+        'tx_id': tx_id,
+        'model': model,
+        'split_method': split_method,
+        'feature_mode': feature_mode,
+        'horizon': horizon,
+        'lookback_multiplier': lookback_multiplier,
+        'seq_len': seq_len,
+        'label_len': label_len,
+        'pred_len': pred_len,
+        'd_model': d_model,
+        'n_heads': n_heads,
+        'e_layers': e_layers,
+        'd_layers': d_layers,
+        'd_ff': d_ff,
+        'factor': factor,
+        'train_epochs': train_epochs,
+        'batch_size': batch_size,
+        'learning_rate': learning_rate,
+        'patience': patience,
+        'mse': metrics.get('MSE'),
+        'mae': metrics.get('MAE'),
+        'r2': metrics.get('R2'),
+        'train_time_seconds': train_time,
+    }
+
+    df_new = pd.DataFrame([record])
+
+    # If file exists, append; otherwise create with header
+    if csv_path.exists():
+        df_new.to_csv(csv_path, mode='a', header=False, index=False)
+        print(f"✓ Record appended to {csv_path}")
+    else:
+        df_new.to_csv(csv_path, mode='w', header=True, index=False)
+        print(f"✓ Created new file and saved record to {csv_path}")
 
 
 def plot_predictions(
@@ -986,6 +1126,10 @@ def main() -> None:
             batch_size=args.batch_size,
             learning_rate=args.learning_rate,
             patience=args.patience,
+            # Additional parameters for experiment recording
+            split_method=args.split_method,
+            feature_mode=args.feature_mode,
+            lookback_multiplier=args.lookback_multiplier,
         )
 
         # Extract metrics from result

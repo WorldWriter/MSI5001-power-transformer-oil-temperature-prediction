@@ -29,6 +29,7 @@
 
 ```bash
 # 实验112: lookback_multiplier=8x (1344步，约14天)
+# 注意：Informer-Long默认lookback_multiplier=4，需要显式指定为8
 python -m scripts.train_configurable ^
     --tx-id 1 ^
     --model Informer-Long ^
@@ -99,6 +100,7 @@ python -m scripts.train_configurable ^
 
 ```bash
 # 实验118: seq_len=672, label_len=336
+# ⚠️ 重要：必须显式指定 --seq-len 和 --label-len 来覆盖默认值
 python -m scripts.train_configurable ^
     --tx-id 1 ^
     --model Informer-Long ^
@@ -108,6 +110,7 @@ python -m scripts.train_configurable ^
     --lookback-multiplier 4.0 ^
     --seq-len 672 ^
     --label-len 336 ^
+    --pred-len 168 ^
     --experiment-name exp_118
 
 # 实验119: seq_len=1008, label_len=504
@@ -120,6 +123,7 @@ python -m scripts.train_configurable ^
     --lookback-multiplier 4.0 ^
     --seq-len 1008 ^
     --label-len 504 ^
+    --pred-len 168 ^
     --experiment-name exp_119
 
 # 实验120: seq_len=1344, label_len=672
@@ -132,6 +136,7 @@ python -m scripts.train_configurable ^
     --lookback-multiplier 4.0 ^
     --seq-len 1344 ^
     --label-len 672 ^
+    --pred-len 168 ^
     --experiment-name exp_120
 ```
 
@@ -181,6 +186,7 @@ python -m scripts.train_configurable ^
 
 ```bash
 # 实验124: e_layers=3, d_layers=2
+# ⚠️ 重要：必须显式指定 --e-layers 和 --d-layers 来覆盖默认值(3, 1)
 python -m scripts.train_configurable ^
     --tx-id 1 ^
     --model Informer-Long ^
@@ -263,6 +269,7 @@ python -m scripts.train_configurable ^
 
 ```bash
 # 实验130: train_epochs=50, learning_rate=5e-5
+# ⚠️ 重要：必须显式指定 --train-epochs, --learning-rate, --patience
 python -m scripts.train_configurable ^
     --tx-id 1 ^
     --model Informer-Long ^
@@ -353,6 +360,7 @@ python -m scripts.train_configurable ^
 
 ```bash
 # 实验136: TX1最优组合
+# ⚠️ 重要：这是组合实验，必须显式指定所有参数覆盖
 python -m scripts.train_configurable ^
     --tx-id 1 ^
     --model Informer-Long ^
@@ -362,6 +370,7 @@ python -m scripts.train_configurable ^
     --lookback-multiplier 12.0 ^
     --seq-len 1008 ^
     --label-len 504 ^
+    --pred-len 168 ^
     --e-layers 4 ^
     --d-layers 2 ^
     --train-epochs 100 ^
@@ -379,6 +388,7 @@ python -m scripts.train_configurable ^
     --lookback-multiplier 12.0 ^
     --seq-len 1008 ^
     --label-len 504 ^
+    --pred-len 168 ^
     --e-layers 4 ^
     --d-layers 2 ^
     --train-epochs 100 ^

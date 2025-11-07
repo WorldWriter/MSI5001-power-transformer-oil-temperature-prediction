@@ -239,8 +239,9 @@ def main():
     
     # 使用相对路径，从当前脚本位置开始
     current_dir = Path(__file__).parent
-    experiment_dir = current_dir
-    logs_dir = experiment_dir / 'logs'
+    experiment_dir = current_dir.parent/ 'results'
+    config_dir = experiment_dir.parent / 'configs'
+    logs_dir = experiment_dir.parent / 'results' / 'logs'
     config_path = experiment_dir / 'experiment_group.csv'
     output_path = experiment_dir / 'experiment_results_summary.csv'
     

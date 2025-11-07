@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -85,6 +86,91 @@ CONFIG_MAPPINGS = {
 }
 
 
+def parse_informer_config(config_str: str) -> Dict[str, any]:
+    """
+    Parse Informer-specific parameters from config string.
+
+    This function extracts model architecture and training parameters from
+    the "实验配置说明" column in experiment_plan.csv.
+
+    Parameters
+    ----------
+    config_str : str
+        Configuration string from CSV (e.g., "seq_len=672, label_len=336")
+
+    Returns
+    -------
+    Dict[str, any]
+        Dictionary of parameter names and values
+
+    Examples
+    --------
+    >>> parse_informer_config("lookback_multiplier=8.0 (1344步)")
+    {'lookback_multiplier': 8.0}
+
+    >>> parse_informer_config("seq_len=672, label_len=336")
+    {'seq_len': 672, 'label_len': 336}
+
+    >>> parse_informer_config("e_layers=3, d_layers=2")
+    {'e_layers': 3, 'd_layers': 2}
+
+    >>> parse_informer_config("train_epochs=50, lr=5e-5, patience=10")
+    {'train_epochs': 50, 'learning_rate': 5e-5, 'patience': 10}
+    """
+    params = {}
+
+    if pd.isna(config_str) or not config_str or config_str.strip() == '-':
+        return params
+
+    # Remove parenthetical notes and "最优组合:" prefix
+    config_str = re.sub(r'\(.*?\)', '', config_str)
+    config_str = re.sub(r'最优组合:\s*', '', config_str)
+
+    # Parse key=value pairs
+
+    # lookback_multiplier or lookback
+    match = re.search(r'lookback[-_]?multiplier\s*=\s*([\d.]+)', config_str, re.IGNORECASE)
+    if match:
+        params['lookback_multiplier'] = float(match.group(1))
+    match = re.search(r'(?<![_a-z])lookback\s*=\s*([\d.]+)x?', config_str, re.IGNORECASE)
+    if match and 'lookback_multiplier' not in params:
+        params['lookback_multiplier'] = float(match.group(1))
+
+    # seq_len, label_len, pred_len
+    for param in ['seq_len', 'label_len', 'pred_len']:
+        match = re.search(rf'{param}\s*=\s*(\d+)', config_str, re.IGNORECASE)
+        if match:
+            params[param] = int(match.group(1))
+
+    # d_model, n_heads, e_layers, d_layers, d_ff, factor
+    for param in ['d_model', 'n_heads', 'e_layers', 'd_layers', 'd_ff', 'factor']:
+        match = re.search(rf'{param}\s*=\s*(\d+)', config_str, re.IGNORECASE)
+        if match:
+            params[param] = int(match.group(1))
+
+    # train_epochs (or epochs)
+    match = re.search(r'(?:train_)?epochs?\s*=\s*(\d+)', config_str, re.IGNORECASE)
+    if match:
+        params['train_epochs'] = int(match.group(1))
+
+    # learning_rate (or lr)
+    match = re.search(r'(?:learning_rate|lr)\s*=\s*([\d.e-]+)', config_str, re.IGNORECASE)
+    if match:
+        params['learning_rate'] = float(match.group(1))
+
+    # batch_size
+    match = re.search(r'batch[-_]?size\s*=\s*(\d+)', config_str, re.IGNORECASE)
+    if match:
+        params['batch_size'] = int(match.group(1))
+
+    # patience
+    match = re.search(r'patience\s*=\s*(\d+)', config_str, re.IGNORECASE)
+    if match:
+        params['patience'] = int(match.group(1))
+
+    return params
+
+
 def parse_experiment_row(row: pd.Series) -> Dict:
     """
     Parse a row from experiment CSV into training parameters.
@@ -136,6 +222,15 @@ def parse_experiment_row(row: pd.Series) -> Dict:
     horizon_str = str(row["预测时长"])
     horizon = CONFIG_MAPPINGS["horizon"].get(horizon_str, 1)
 
+    # Parse Informer-specific configuration from "实验配置说明" column
+    informer_config = {}
+    if "实验配置说明" in row.index:
+        config_str = str(row["实验配置说明"])
+        informer_config = parse_informer_config(config_str)
+        # Override lookback_multiplier if specified in config
+        if 'lookback_multiplier' in informer_config:
+            lookback_multiplier = informer_config.pop('lookback_multiplier')
+
     return {
         "exp_id": exp_id,
         "exp_name": exp_name,
@@ -148,6 +243,7 @@ def parse_experiment_row(row: pd.Series) -> Dict:
         "feature_mode": feature_mode,
         "lookback_multiplier": lookback_multiplier,
         "horizon": horizon,
+        "informer_config": informer_config,
     }
 
 
@@ -185,6 +281,14 @@ def build_training_command(params: Dict) -> List[str]:
 
     if params["data_suffix"]:
         cmd.extend(["--data-suffix", params["data_suffix"]])
+
+    # Add Informer-specific parameters if present
+    informer_config = params.get("informer_config", {})
+    if informer_config:
+        for key, value in informer_config.items():
+            # Convert key to command-line format (e.g., seq_len -> --seq-len)
+            arg_name = "--" + key.replace("_", "-")
+            cmd.extend([arg_name, str(value)])
 
     return cmd
 
