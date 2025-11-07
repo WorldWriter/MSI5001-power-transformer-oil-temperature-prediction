@@ -1,6 +1,10 @@
 # Model files - ignore to avoid LFS issues
 *.joblib
-/models/
+/models/**/*.joblib
+/models/experiments/
+/models/baseline/
+/models/horizon_experiments/
+/models/random_split/
 
 # Result files - ignore large binary files
 *.npy
