@@ -1,3 +1,9 @@
 # Model files - ignore to avoid LFS issues
 *.joblib
 /models/
+
+# Result files - ignore large binary files
+*.npy
+*.pth
+external/Informer2020/results/
+__pycache__/

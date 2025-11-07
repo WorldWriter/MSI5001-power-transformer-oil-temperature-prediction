@@ -1,14 +1,34 @@
 ======================================================================
-Informer Native Training Log
+Experiment Log
+Started: 2025-11-07 15:41:23
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 1 --model Informer-Long --split-method chronological --feature-mode full --lookback-multiplier 16.0 --horizon 168 --experiment-name exp_114 --data-suffix _no_outlier
+======================================================================
+
+======================================================================
 Experiment: exp_114
-Started: 2025-11-07 15:41:30
 ======================================================================
+Transformer:     TX1
+Model:           Informer-Long
+Split method:    chronological
+Feature mode:    full
+Data suffix:     _no_outlier
 
-Command:
-C:\ProgramData\anaconda3\python.exe E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\main_informer.py --model informerstack --data custom --root_path ./data/ --data_path TX1.csv --features MS --target OT --freq h --seq_len 336 --label_len 168 --pred_len 168 --enc_in 6 --dec_in 1 --c_out 1 --d_model 256 --n_heads 8 --e_layers 3 --d_layers 1 --d_ff 1024 --factor 5 --dropout 0.05 --attn prob --embed timeF --activation gelu --batch_size 8 --train_epochs 8 --patience 3 --learning_rate 0.0001 --des exp_114 --itr 1
+Loading data...
+  Total samples: 69680
+  Added TX1 dynamic features
+  Features: 21 columns
 
-======================================================================
+Window config: WindowConfig(horizon=168, lookback=2688, gap=0)
+Creating sliding windows for Informer-Long (keeping sequence structure)...
+  Created 66824 windows (shape: (66824, 2688, 21))
+Splitting windows (chronological, 20% test)...
+  Train: 53459 windows
+  Test:  13365 windows
 
+Training Informer-Long...
+
+Calling native Informer from: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020
+Command: C:\ProgramData\anaconda3\python.exe E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\external\Informer2020\main_informer.py --model informerstack --data custom --root_path ./data/ --data_path TX1.csv --features MS --target OT --freq h --seq_len 336 --label_len 168 --pred_len 168 --enc_in 6 --dec_in 1 --c_out 1 --d_model 256 --n_heads 8 --e_layers 3 --d_layers 1 --d_ff 1024 --factor 5 --dropout 0.05 --attn prob --embed timeF --activation gelu --batch_size 8 --train_epochs 8 --patience 3 --learning_rate 0.0001 --des exp_114 --itr 1
 Args in experiment:
 Namespace(model='informerstack', data='custom', root_path='./data/', data_path='TX1.csv', features='MS', target='OT', freq='h', checkpoints='./checkpoints/', seq_len=336, label_len=168, pred_len=168, enc_in=6, dec_in=1, c_out=1, d_model=256, n_heads=8, e_layers=3, d_layers=1, s_layers=[3, 2, 1], d_ff=1024, factor=5, padding=0, distil=True, dropout=0.05, attn='prob', embed='timeF', activation='gelu', output_attention=False, do_predict=False, mix=True, cols=None, num_workers=0, itr=1, train_epochs=8, batch_size=8, patience=3, learning_rate=0.0001, des='exp_114', loss='mse', lradj='type1', use_amp=False, inverse=False, use_gpu=True, gpu=0, use_multi_gpu=False, devices='0,1,2,3', detail_freq='h')
 Use GPU: cuda:0
@@ -518,7 +538,35 @@ test shape: (1721, 8, 168, 1) (1721, 8, 168, 1)
 test shape: (13768, 168, 1) (13768, 168, 1)
 mse:0.44693127274513245, mae:0.5714865922927856, r2:-1.6202950477600098
 
+
+Parsed metrics from Informer output (normalized scale):
+  MSE:  0.4469
+  MAE:  0.5715
+  RMSE: 0.6685
+  R2:   -1.6203
+
+Metrics after inverse transformation (original scale):
+  MSE:  31.1302
+  MAE:  4.7695
+  RMSE: 5.5794
+  R2:   -1.6203
+Warning: Failed to record experiment: 'gbk' codec can't encode character '\u2713' in position 0: illegal multibyte sequence
+  Training time: 856.67s
+  RMSE: 5.5794
+  MAE:  4.7695
+  R2:   -1.6203
+
+Saving results...
+  Model: Native Informer (saved in external/Informer2020/checkpoints/)
+  Predictions: Not saved (native Informer handles this internally)
+  Metrics: E:\ANUS_learning\MSI5001-power-transformer-oil-temperature-prediction\models\experiments\exp_114_metrics.json
+  Plot: Skipped (native Informer handles visualization internally)
+
 ======================================================================
-Completed: 2025-11-07 15:55:46
+Experiment complete: exp_114
+======================================================================
+
+======================================================================
+Completed: 2025-11-07 15:55:48
 Return code: 0
 ======================================================================

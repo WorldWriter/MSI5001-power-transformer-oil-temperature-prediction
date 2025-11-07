@@ -1,0 +1,6 @@
+======================================================================
+Experiment Log
+Started: 2025-11-08 01:01:27
+Command: C:\ProgramData\anaconda3\python.exe -m scripts.train_configurable --tx-id 2 --model Informer-Long --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_134 --data-suffix _no_outlier --train-epochs 100 --learning-rate 5e-05 --patience 15
+======================================================================
+
