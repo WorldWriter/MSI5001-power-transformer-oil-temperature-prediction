@@ -435,5 +435,96 @@ If all exp_138-147 fail (R² < -0.5):
 
 ---
 
-**Document Status**: ✅ Complete
-**Next Review**: After Phase 5 experiments complete
+## Phase 5 Update: Strategy Pivot to LR-First (2025-11-08)
+
+### Issue: exp_138 Timeout
+
+**Problem**: exp_138 (d_layers=4, epochs=150) timed out after 1 hour
+**Root Cause**: Decoder depth doubled + 50% more epochs → ~90 minutes needed
+**User Insight**: "Learning rate should be determined first" ✓
+
+### Strategic Decision: Pivot to LR Grid Search
+
+**Rationale**:
+1. **Current problem**: LR selection coupled with other hyperparameters
+2. **Missing baseline**: No systematic LR tuning experiments
+3. **Risk**: May have missed optimal LR (e.g., 7e-5 or 3e-5)
+4. **Solution**: 50-epoch fast validation to find optimal LR first
+
+### Revised exp_138-147 Design
+
+#### Group 1: LR Grid Search (exp_138-145) - 8 experiments
+**Fixed Configuration** (based on exp_136 baseline):
+- TX1, seq_len=1008, label_len=504, pred_len=168
+- d_layers=2, e_layers=4 (proven architecture)
+- epochs=50, patience=10, batch_size=8
+- lookback_multiplier=12.0
+
+**Variable: Learning Rate**
+| Exp ID | LR | Purpose |
+|--------|-----|---------|
+| exp_138 | 1e-5 | Baseline (slow) |
+| exp_139 | 2e-5 | Mid-low |
+| exp_140 | 3e-5 | Mid |
+| exp_141 | 5e-5 | Current best candidate (from exp_136) |
+| exp_142 | 7e-5 | **New exploration** - mid-high |
+| exp_143 | 1e-4 | Known upper bound |
+| exp_144 | 1.5e-4 | High |
+| exp_145 | 2e-4 | Explore upper limit |
+
+**Expected Time**: 8 × 45min = 6 hours
+
+#### Group 2: Architecture Validation (exp_146-147) - 2 experiments
+**Using mid-range LR (5e-5)** for fair comparison:
+- exp_146: d_layers=4, e_layers=4 (deep decoder test)
+- exp_147: d_layers=5, e_layers=5 (balanced depth test)
+
+**Expected Time**: 2 × 50min = 1.7 hours
+
+### Infrastructure Updates
+
+1. **Timeout increased**: 1 hour → 2 hours (7200s)
+   - Accommodates deeper models
+   - File: `scripts/train_configurable.py` Line 560
+
+2. **Encoding fix**: Unicode (✓/⚠️) → ASCII ([OK]/[!])
+   - Windows GBK compatibility
+   - File: `scripts/train_configurable.py` Lines 735, 743, 892, 895
+
+### Expected Outcomes
+
+**Phase 5 Success Criteria**:
+1. **LR Search (exp_138-145)**:
+   - Identify optimal LR (predict: 3e-5 to 7e-5 range)
+   - Best experiment R² > -0.5 (beat exp_136's -0.63)
+   - Clear peak in LR curve
+
+2. **Architecture Validation (exp_146-147)**:
+   - exp_146 (d=4): Test if deep decoder helps
+   - exp_147 (d=5, e=5): Test balanced architecture
+   - At least 1 experiment R² > -0.4
+
+### Next Steps After Phase 5
+
+1. **Analyze LR results** → Select top-1 or top-2 LR
+2. **Design Phase 6**: Use optimal LR to test deeper architectures
+3. **If optimal LR ≠ 5e-5**: Re-run key experiments with new LR
+4. **If architecture variants succeed**: Expand depth exploration
+
+### Lessons from Strategy Pivot
+
+**What We Learned**:
+- ❌ **Don't couple hyperparameters**: LR should be determined independently
+- ✅ **50 epochs sufficient**: For fast validation and LR comparison
+- ✅ **User insight valuable**: "LR first" is standard ML practice
+- ✅ **Fail fast, adjust**: exp_138 timeout led to better strategy
+
+**Industry Best Practice Applied**:
+1. Fix architecture → Tune LR (what we're doing now)
+2. Fix optimal LR → Tune architecture (Phase 6+)
+3. Iterate with ablation studies
+
+---
+
+**Document Status**: ✅ Updated (Phase 5 Pivot)
+**Next Review**: After Phase 5 LR search complete (exp_138-145)

@@ -557,7 +557,7 @@ def train_informer_native(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                timeout=3600  # 1 hour timeout
+                timeout=7200  # 2 hour timeout
             )
 
             # Write output to log
@@ -673,7 +673,7 @@ def train_informer_native(
             }
 
     except subprocess.TimeoutExpired:
-        error_msg = "Training timeout after 1 hour"
+        error_msg = "Training timeout after 2 hours"
         print(f"\nError: {error_msg}")
 
         # Record failed experiment
@@ -701,7 +701,7 @@ def train_informer_native(
                 learning_rate=learning_rate,
                 patience=patience,
                 metrics={'MSE': None, 'MAE': None, 'R2': None},
-                train_time=3600.0,
+                train_time=7200.0,
                 status='failed_timeout',
                 error_message=error_msg,
             )
@@ -713,7 +713,7 @@ def train_informer_native(
             "MAE": None,
             "MSE": None,
             "R2": None,
-            "train_time": 3600.0,
+            "train_time": 7200.0,
             "error": "timeout"
         }
 
@@ -732,7 +732,7 @@ def train_informer_native(
 
         if is_oom:
             status = 'failed_oom'
-            print(f"\n⚠️  CUDA Out of Memory Error detected!")
+            print(f"\n[!] CUDA Out of Memory Error detected!")
             print(f"Error: {error_msg}")
 
             # Try to clean up CUDA memory
@@ -740,7 +740,7 @@ def train_informer_native(
                 import torch
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                    print("✓ CUDA cache cleared")
+                    print("[OK] CUDA cache cleared")
             except Exception as cleanup_err:
                 print(f"Warning: Could not clear CUDA cache: {cleanup_err}")
         else:
@@ -889,10 +889,10 @@ def append_experiment_record(
     # If file exists, append; otherwise create with header
     if csv_path.exists():
         df_new.to_csv(csv_path, mode='a', header=False, index=False)
-        print(f"✓ Record appended to {csv_path}")
+        print(f"[OK] Record appended to {csv_path}")
     else:
         df_new.to_csv(csv_path, mode='w', header=True, index=False)
-        print(f"✓ Created new file and saved record to {csv_path}")
+        print(f"[OK] Created new file and saved record to {csv_path}")
 
 
 def plot_predictions(
