@@ -655,6 +655,7 @@ def train_informer_native(
                     metrics=result_metrics,
                     train_time=train_time,
                     status='success',
+                    error_message=None,
                 )
             except Exception as e:
                 print(f"Warning: Failed to record experiment: {e}")
@@ -672,7 +673,41 @@ def train_informer_native(
             }
 
     except subprocess.TimeoutExpired:
-        print(f"\nError: Training timeout after 1 hour")
+        error_msg = "Training timeout after 1 hour"
+        print(f"\nError: {error_msg}")
+
+        # Record failed experiment
+        try:
+            append_experiment_record(
+                results_dir=output_dir.parent,
+                experiment_id=exp_id,
+                tx_id=tx_id,
+                model=model_name,
+                split_method=split_method,
+                feature_mode=feature_mode,
+                horizon=horizon,
+                lookback_multiplier=lookback_multiplier,
+                seq_len=seq_len,
+                label_len=label_len,
+                pred_len=pred_len,
+                d_model=d_model,
+                n_heads=n_heads,
+                e_layers=e_layers,
+                d_layers=d_layers,
+                d_ff=d_ff,
+                factor=factor,
+                train_epochs=train_epochs,
+                batch_size=batch_size,
+                learning_rate=learning_rate,
+                patience=patience,
+                metrics={'MSE': None, 'MAE': None, 'R2': None},
+                train_time=3600.0,
+                status='failed_timeout',
+                error_message=error_msg,
+            )
+        except Exception as record_err:
+            print(f"Warning: Failed to record timeout: {record_err}")
+
         return {
             "RMSE": None,
             "MAE": None,
@@ -681,15 +716,78 @@ def train_informer_native(
             "train_time": 3600.0,
             "error": "timeout"
         }
+
     except Exception as e:
-        print(f"\nError during Informer training: {e}")
+        error_str = str(e).lower()
+        error_msg = str(e)
+
+        # Detect CUDA OOM errors
+        is_oom = any(keyword in error_str for keyword in [
+            'out of memory',
+            'cuda out of memory',
+            'cudnn error: cudnn_status_alloc_failed',
+            'cuda error',
+            'out-of-memory',
+        ])
+
+        if is_oom:
+            status = 'failed_oom'
+            print(f"\n⚠️  CUDA Out of Memory Error detected!")
+            print(f"Error: {error_msg}")
+
+            # Try to clean up CUDA memory
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    print("✓ CUDA cache cleared")
+            except Exception as cleanup_err:
+                print(f"Warning: Could not clear CUDA cache: {cleanup_err}")
+        else:
+            status = 'failed'
+            print(f"\nError during Informer training: {error_msg}")
+
+        train_time = time.time() - start_time
+
+        # Record failed experiment
+        try:
+            append_experiment_record(
+                results_dir=output_dir.parent,
+                experiment_id=exp_id,
+                tx_id=tx_id,
+                model=model_name,
+                split_method=split_method,
+                feature_mode=feature_mode,
+                horizon=horizon,
+                lookback_multiplier=lookback_multiplier,
+                seq_len=seq_len,
+                label_len=label_len,
+                pred_len=pred_len,
+                d_model=d_model,
+                n_heads=n_heads,
+                e_layers=e_layers,
+                d_layers=d_layers,
+                d_ff=d_ff,
+                factor=factor,
+                train_epochs=train_epochs,
+                batch_size=batch_size,
+                learning_rate=learning_rate,
+                patience=patience,
+                metrics={'MSE': None, 'MAE': None, 'R2': None},
+                train_time=train_time,
+                status=status,
+                error_message=error_msg[:500],  # Truncate long error messages
+            )
+        except Exception as record_err:
+            print(f"Warning: Failed to record error: {record_err}")
+
         return {
             "RMSE": None,
             "MAE": None,
             "MSE": None,
             "R2": None,
-            "train_time": time.time() - start_time,
-            "error": str(e)
+            "train_time": train_time,
+            "error": error_msg
         }
 
 
@@ -718,6 +816,7 @@ def append_experiment_record(
     metrics: dict,
     train_time: float,
     status: str,
+    error_message: str = None,
 ):
     """
     Append experiment record to informer_further_experiment.csv.
@@ -750,6 +849,7 @@ def append_experiment_record(
         metrics: Dictionary containing MSE, MAE, R2
         train_time: Training time in seconds
         status: Experiment status (success/failed/oom)
+        error_message: Error message if experiment failed (optional)
     """
     csv_path = results_dir / "informer_further_experiment.csv"
 
@@ -781,6 +881,7 @@ def append_experiment_record(
         'mae': metrics.get('MAE'),
         'r2': metrics.get('R2'),
         'train_time_seconds': train_time,
+        'error_message': error_message if error_message else '',
     }
 
     df_new = pd.DataFrame([record])

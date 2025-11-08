@@ -1,0 +1,6 @@
+======================================================================
+Experiment Log
+Started: 2025-11-08 16:43:17
+Command: /opt/miniconda3/bin/python -m scripts.train_configurable --tx-id 1 --model Informer-Long --split-method chronological --feature-mode full --lookback-multiplier 4.0 --horizon 168 --experiment-name exp_138 --data-suffix _no_outlier --seq-len 1008 --label-len 504 --pred-len 168 --e-layers 4 --d-layers 4 --train-epochs 150 --learning-rate 3e-05 --batch-size 8 --patience 20
+======================================================================
+
