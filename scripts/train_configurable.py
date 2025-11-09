@@ -557,7 +557,7 @@ def train_informer_native(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                timeout=7200  # 2 hour timeout
+                timeout=10800  # 3 hour timeout
             )
 
             # Write output to log
@@ -673,7 +673,7 @@ def train_informer_native(
             }
 
     except subprocess.TimeoutExpired:
-        error_msg = "Training timeout after 2 hours"
+        error_msg = "Training timeout after 3 hours"
         print(f"\nError: {error_msg}")
 
         # Record failed experiment
@@ -701,7 +701,7 @@ def train_informer_native(
                 learning_rate=learning_rate,
                 patience=patience,
                 metrics={'MSE': None, 'MAE': None, 'R2': None},
-                train_time=7200.0,
+                train_time=10800.0,
                 status='failed_timeout',
                 error_message=error_msg,
             )
